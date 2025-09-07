@@ -309,14 +309,39 @@ select#gameMode:focus {
 body.normal-mode #waitingRoomScreen { background: #fffde7; }
 body.normal-mode #waitingStatus { color: #ff5722; }
 
+body.normal-mode {
+  background: #f5f5f5;
+  color: #222;
+}
 /* Dating */
 body.dating-mode #waitingRoomScreen { background: #ffe4ec; }
 body.dating-mode #waitingStatus { color: #c2185b; }
 
+body.dating-mode {
+  background: linear-gradient(to right, #ffafbd, #ffc3a0);
+  color: #b22222;
+}
 /* Office Party */
 body.officeparty-mode #waitingRoomScreen { background: #e3f2fd; }
 body.officeparty-mode #waitingStatus { color: #1565c0; }
 
+body.officeparty-mode {
+  background: #e0f7fa;
+  color: #004d40;
+}
 /* House Party */
 body.houseparty-mode #waitingRoomScreen { background: #fff3e0; }
 body.houseparty-mode #waitingStatus { color: #ef6c00; }
+
+body.houseparty-mode {
+  background: #fff8e1;
+  color: #6d4c41;
+}
+/* style.css */
+
+
+
+
+
+
+

@@ -527,3 +527,13 @@ function applyTheme(mode) {
   document.body.classList.add(`${mode}-mode`);
 }
 
+function changeMode() {
+    const mode = document.getElementById("gameMode").value;
+    const body = document.body;
+
+    // Remove previous mode classes
+    body.classList.remove("normal-mode", "dating-mode", "officeparty-mode", "houseparty-mode");
+
+    // Add the new mode class
+    body.classList.add(`${mode}-mode`);
+}
