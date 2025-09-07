@@ -396,7 +396,7 @@ async function loadVoting() {
 async function vote(answerId) {
   try {
     const resp = await safeFetch(
-      `${backendUrl}/vote?voterId=${playerId}&answerId=${answerId}&roomCode=${roomCode}&mode=${gameMode}`,
+      `${backendUrl}/vote?voterId=${playerId}&answerId=${answerId}&roomCode=${roomCode}`,
       { method: "POST" }
     );
     if (!resp.ok) {
