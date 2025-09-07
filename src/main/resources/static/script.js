@@ -41,7 +41,7 @@ let lastSubmittedAnswerText = "";
 
 // Show screens
 function showScreen(screenId) {
-  let screens = ["lobbyScreen","waitingRoomScreen","questionScreen","answerScreen","voteScreen","resultScreen","scoreScreen"];
+  let screens = ["lobbyScreen","waitingRoomScreen","questionScreen","answerScreen","voteScreen","resultScreen","scoreScreen","loadingScreen"];
   screens.forEach(id => document.getElementById(id).classList.add("hidden"));
   document.getElementById(screenId).classList.remove("hidden");
 }
