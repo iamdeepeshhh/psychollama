@@ -171,106 +171,108 @@ public class QuestionGeneratorService {
     private String buildPrompt(String mode, int count, int round, String players, String topics, String pastQStr, String language) {
         // 🌐 Language toggle
         String langInstruction = (language != null && language.equalsIgnoreCase("hindi"))
-                ? "Write ALL questions in fluent, natural, conversational Hindi. Keep them short, funny, and engaging."
-                : "Write ALL questions in fluent, natural, conversational English. Keep them short, funny, and engaging.";
+                ? "Write ONLY in playful Hindi. Keep it short, cheeky, and LOL-worthy. Never ask for reasons. Never use 'अगर %s ... होता' style metaphors."
+                : "Write ONLY in playful English. Keep it short, cheeky, and LOL-worthy. Never ask for reasons. Never use 'If X was Y' style metaphors.";
 
-        // 🎯 Round-based difficulty & style
-        String levelInstruction = switch (round) {
-            case 1 -> """
-                  Round 1 = The HOOK round. 
-                  - Questions must be highly CREATIVE, witty, and attention-grabbing.
-                  - They should be simple enough to answer quickly, but imaginative enough to spark laughter.
-                  - Formats to prefer: funny comparisons, emoji metaphors, “who is most likely to…”, or quick imagination prompts.
-                  """;
-            case 2 -> """
-                  Round 2 = The PLAYFUL progression. 
-                  - Make questions more daring and playful. 
-                  - Encourage funny exaggerations, “what if” scenarios, and humorous storytelling.
-                  - Players should feel challenged to be more creative.
-                  """;
-            default -> """
-                  Round 3+ = The WILD rounds. 
-                  - Push creativity to the maximum. 
-                  - Questions should be bold, unexpected, and hilarious. 
-                  - Use exaggerations, friendly roasts, and absurd but safe scenarios.
-                  - These rounds should create the loudest laughs of the game.
-                  """;
+        // 🎯 Round style
+        String roundStyle = switch (round) {
+            case 1 -> "Round 1 (HOOK): Simple icebreakers, quick laughs, light roasts.";
+            case 2 -> "Round 2 (PLAYFUL): Go funnier, sillier, with social chaos energy.";
+            default -> "Round 3+ (CHAOS): Bold, absurd, roast-style humor. Push creativity hard, but keep it safe.";
         };
 
-        // 📜 Universal rules
-        String baseRules = """
-            ⚠️ IMPORTANT RULES:
-            - Do NOT end questions with "... and why?". Keep answers short & funny, not essays.
-            - Avoid political, religious, or sensitive topics.
-            - Do not repeat or rephrase past questions: %s
-            - Always involve or reference the players by name: %s
-            - Use the given topics for inspiration: %s
-            - Keep tone light, humorous, and safe for all players.
-            - Output format: strictly a numbered list (1, 2, 3…).
-            """.formatted(pastQStr, players, topics);
-
-        // ✨ Mode-specific style
-        String modeInstruction = switch (mode.toLowerCase()) {
-            case "dating" -> """
-                         MODE = DATING GAME
-                         - Questions should be romantic, flirty, and playful. 
-                         - Focus on chemistry, fun banter, and personality-based humor.
-                         - Keep it sweet, cheeky, never offensive.
-                         """;
-            case "officeparty" -> """
-                              MODE = OFFICE PARTY
-                              - Questions should be lighthearted icebreakers. 
-                              - Safe for workplace, but not boring. 
-                              - Professional yet funny, making colleagues laugh together.
-                              - Avoid politics/religion, but allow fun exaggerations.
-                              """;
-            case "houseparty" -> """
-                             MODE = HOUSE PARTY
-                             - Questions should be casual, inclusive, and fun for mixed groups. 
-                             - Encourage friendly banter and imaginative scenarios. 
-                             - Keep tone relaxed and social.
-                             """;
-            default -> """
-                   MODE = CLASSIC PARTY
-                   - Funny, silly, slightly roasty questions.
-                   - Aim to make players laugh instantly.
-                   - Keep it casual, witty, and highly engaging.
-                   """;
+        // 🎭 Mode style
+        String modeStyle = switch (mode.toLowerCase()) {
+            case "dating" -> "MODE = DATING: Flirty, cheeky, playful. Rom-com banter, no vulgarity.";
+            case "officeparty" -> "MODE = OFFICE PARTY: PG-13, goofy corporate humor, awkward-funny workplace vibes.";
+            case "houseparty" -> "MODE = HOUSE PARTY: Chill, goofy, inclusive roast style.";
+            default -> "MODE = CLASSIC: Silly, witty, punchline humor. Keep it random and fun.";
         };
 
-        // ✅ Examples (different for Hindi/English)
-        String examples = (language != null && language.equalsIgnoreCase("hindi"))
-                ? """
-              ✅ Example Hindi Questions:
-              1. अगर %s किसी बॉलीवुड फिल्म का हीरो होता, तो कौन सी फिल्म होती?
-              2. किस खिलाड़ी का हंसना इतना मज़ेदार है कि बाकी सब भी हंस पड़ें?
-              3. अगर %s एक इमोजी होता, तो कौन सा इमोजी होता?
-              """.formatted(players, players)
-                : """
-              ✅ Example English Questions:
-              1. If %s were the lead in a movie, which movie would it be?
-              2. Whose laugh is so contagious that it could start a chain reaction?
-              3. If %s was an emoji, which emoji would they be?
-              """.formatted(players, players);
+        // 🧩 Rules
+        String rules = """
+        RULES:
+        - No politics, religion, or sensitive stuff.
+        - Never ask 'why' or 'reason'.
+        - Never use 'If X was Y' style metaphors.
+        - Always use player names: %s
+        - Use given topics for inspiration: %s
+        - Keep it direct, punchy, and instantly funny.
+        - Think like a stand-up comedian hosting a party.
+        """.formatted(players, topics);
 
-        // 🏗 Final assembly
+        // 🌟 Examples by mode
+        String examples;
+        if (language != null && language.equalsIgnoreCase("hindi")) {
+            examples = switch (mode.toLowerCase()) {
+                case "dating" -> """
+                Example Hindi (Dating):
+                1. सबसे पहले कौन “आई लव यू” बोलकर खुद ही हंस देगा?
+                2. कौन सा खिलाड़ी डेट पर सेल्फी लेने में टाइम पास करेगा?
+                3. सबसे पहले किसका फोन डेट पर बजेगा?
+                """;
+                case "officeparty" -> """
+                Example Hindi (Office Party):
+                1. सबसे पहले कौन बॉस की नकल करेगा?
+                2. किसका हंसी मीटिंग में सबसे जोर से फूटेगा?
+                3. कौन सा खिलाड़ी कैंटीन से सबसे ज्यादा स्नैक्स उठाएगा?
+                """;
+                case "houseparty" -> """
+                Example Hindi (House Party):
+                1. सबसे पहले कौन DJ से “भाई भजन बजा” कहेगा?
+                2. किसका फोन हमेशा 1% पर रहेगा?
+                3. कौन सा खिलाड़ी गोलगप्पे की लाइन तोड़ेगा?
+                """;
+                default -> """
+                Example Hindi (Classic Party):
+                1. किसका ringtone अभी भी “Hello Moto” वाला होगा?
+                2. कौन WhatsApp ग्रुप में गलत फोटो भेजेगा?
+                3. किसका चेहरा देखकर लगेगा जैसे अभी होमवर्क भूल गया है?
+                """;
+            };
+        } else {
+            examples = switch (mode.toLowerCase()) {
+                case "dating" -> """
+                Example English (Dating):
+                1. Who would 100% text back with just a heart emoji?  
+                2. Which player would plan a date at McDonald’s?  
+                3. Who is most likely to blush before even saying hello?  
+                """;
+                case "officeparty" -> """
+                Example English (Office Party):
+                1. Who would send an email with “Reply All” by mistake?  
+                2. Which player would laugh in the boss’s serious speech?  
+                3. Who is most likely to steal all the samosas at the party?  
+                """;
+                case "houseparty" -> """
+                Example English (House Party):
+                1. Who would start karaoke after two drinks?  
+                2. Which player would hide snacks and eat them later?  
+                3. Who is most likely to trip while dancing?  
+                """;
+                default -> """
+                Example English (Classic Party):
+                1. Who is most likely to argue with Siri and lose?  
+                2. Which player would forget their own birthday party?  
+                3. Who looks like they’d join the wrong Zoom call?  
+                """;
+            };
+        }
+
+        // ✅ Final assembly
         return """
-            Generate %d UNIQUE, creative, and funny questions for a party game.
+        Generate %d UNIQUE, hilarious one-liner party questions.
 
-            %s
+        %s
+        %s
+        %s
+        %s
+        %s
 
-            %s
-
-            %s
-
-            %s
-
-            %s
-
-            OUTPUT:
-            - Strictly a numbered list from 1 to %d
-            - No explanations, no extra text — ONLY the questions.
-            """.formatted(count, modeInstruction, baseRules, levelInstruction, langInstruction, examples, count);
+        OUTPUT:
+        - Strictly numbered list (1 to %d)
+        - Only the questions. No explanations, no 'why', no metaphors, no filler.
+        """.formatted(count, modeStyle, roundStyle, rules, langInstruction, examples, count);
     }
 
     /**
