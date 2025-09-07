@@ -530,10 +530,28 @@ function applyTheme(mode) {
 function changeMode() {
     const mode = document.getElementById("gameMode").value;
     const body = document.body;
+    const tagline = document.getElementById("tagline");
 
     // Remove previous mode classes
     body.classList.remove("normal-mode", "dating-mode", "officeparty-mode", "houseparty-mode");
 
     // Add the new mode class
     body.classList.add(`${mode}-mode`);
+
+    // Change tagline based on mode
+    switch (mode) {
+        case "normal":
+            tagline.textContent = "Write the funniest answers. Fool your friends. Win the crown!";
+            break;
+        case "dating":
+            tagline.textContent = "💘 Break the ice, make them laugh, win their heart!";
+            break;
+        case "officeparty":
+            tagline.textContent = "🏢 Roast your coworkers (nicely) and grab the crown!";
+            break;
+        case "houseparty":
+            tagline.textContent = "🏠 Bring the chaos, outwit your friends, rule the night!";
+            break;
+    }
 }
+
