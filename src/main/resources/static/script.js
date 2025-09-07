@@ -340,7 +340,7 @@ async function submitAnswer() {
 async function checkIfAllAnswered() {
   try {
     const url = `${backendUrl}/answers/all-answered?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`;
-    const resp = await fetch(url);
+    const resp = await safeFetch(url);
     if (!resp.ok) throw new Error("Check failed");
 
     const allAnswered = await resp.json();
@@ -363,7 +363,7 @@ async function loadVoting() {
 
     movedToVote = true;
 
-    const resp = await fetch(
+    const resp = await safeFetch(
       `${backendUrl}/answers/list?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`
     );
     if (!resp.ok) throw new Error("Failed to load answers");
@@ -395,7 +395,7 @@ async function loadVoting() {
 // Vote
 async function vote(answerId) {
   try {
-    const resp = await fetch(
+    const resp = await safeFetch(
       `${backendUrl}/vote?voterId=${playerId}&answerId=${answerId}&roomCode=${roomCode}&mode=${gameMode}`,
       { method: "POST" }
     );
@@ -423,7 +423,7 @@ showScreen("resultScreen");
         // (Optional) keep players fresh so expected is accurate
         await loadPlayers();
 
-        const res = await fetch(`${backendUrl}/vote/all-voted?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
+        const res = await safeFetch(`${backendUrl}/vote/all-voted?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
         if (!res.ok) throw new Error("all-voted check failed");
         const allVoted = await res.json();
 
@@ -444,7 +444,7 @@ showScreen("resultScreen");
 
 async function renderVoteResults() {
   try {
-    const resp = await fetch(`${backendUrl}/vote/results?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
+    const resp = await safeFetch(`${backendUrl}/vote/results?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
     console.log(`✅ Vote finished for Q${currentSequence}, moving to next`);
     if (!resp.ok) throw new Error("Failed to load vote results");
     const data = await resp.json();
@@ -518,7 +518,7 @@ async function showScoreboard() {
   showScreen("scoreScreen");
 
   try {
-    const resp = await fetch(`${backendUrl}/game/scoreboard/${roomCode}`);
+    const resp = await safeFetch(`${backendUrl}/game/scoreboard/${roomCode}`);
     if (!resp.ok) throw new Error("Failed to fetch scoreboard");
 
     const scores = await resp.json();
@@ -573,6 +573,27 @@ function changeMode() {
             tagline.textContent = "🏠 Bring the chaos, outwit your friends, rule the night!";
             break;
     }
+}
+
+async function safeFetch(url, options = {}, retries = 3, delay = 2000) {
+  try {
+    const resp = await fetch(url, options);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} on ${url}`);
+    return resp;
+  } catch (err) {
+    console.warn(`⚠️ Fetch failed: ${url}`, err);
+
+    if (retries > 0) {
+      console.log(`🔄 Retrying in ${delay / 1000}s... (${retries} left)`);
+      await new Promise(r => setTimeout(r, delay));
+      return safeFetch(url, options, retries - 1, delay);
+    }
+
+    // After all retries, show reconnect message
+    const waiting = document.getElementById("waitingStatus");
+    if (waiting) waiting.innerText = "⚠️ Connection lost. Trying to reconnect...";
+    throw err;
+  }
 }
 
 
