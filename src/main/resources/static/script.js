@@ -190,7 +190,7 @@ async function readyUp() {
           clearInterval(interval);
 
           // 👇 now that ALL are ready → start polling starter questions
-          let countdown = 10;
+          let countdown = 15;
           document.getElementById("waitingStatus").innerText =
             `All players ready! Starting in ${countdown}s...`;
 
