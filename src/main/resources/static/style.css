@@ -1,0 +1,322 @@
+/* 🌍 Global reset & fonts */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #333;
+}
+
+.hidden { display: none !important; }
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+  transition: all 0.5s ease-in-out;
+}
+
+/* 🎭 Titles */
+.game-title {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #ff9800, #ffca28);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tagline {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  opacity: 0.9;
+  font-style: italic;
+  color: #5d4037;
+}
+
+/* 📝 Input fields */
+.input-box input {
+  display: block;
+  width: 80%;
+  margin: 10px auto;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #ffca28;
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+  color: #333;
+}
+
+/* 🎨 Mode dropdown */
+select#gameMode {
+  width: 80%;
+  margin: 10px auto;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #ffca28;
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+  color: #333;
+  appearance: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+select#gameMode:focus {
+  border-color: #ff9800;
+  box-shadow: 0 0 6px rgba(255, 152, 0, 0.4);
+}
+
+/* 🎛 Uniform dropdown styling */
+.input-box select {
+  display: block;
+  width: 80%;
+  margin: 10px auto;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #ffca28;
+  font-size: 1rem;
+  outline: none;
+  background: #fff;
+  color: #333;
+  appearance: none; /* remove default arrow in most browsers */
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Add a custom arrow */
+.input-box select {
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23333' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+}
+
+/* Hover + focus */
+.input-box select:hover,
+.input-box select:focus {
+  border-color: #ff9800;
+  box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+}
+
+
+/* 🔘 Buttons */
+.btn {
+  font-size: 1.1rem;
+  padding: 12px 25px;
+  margin: 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn.primary {
+  background: #ff9800;
+  color: white;
+  box-shadow: 0 4px 10px rgba(255,152,0,0.3);
+}
+
+.btn.secondary {
+  background: #4db6ac;
+  color: white;
+  box-shadow: 0 4px 10px rgba(77,182,172,0.3);
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* 🕹 Waiting Room (base) */
+#waitingRoomScreen {
+  border-radius: 16px;
+  padding: 30px;
+  width: 70%;
+  max-width: 700px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#playersList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.player-entry {
+  background: #fff;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 12px;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.player-entry::before {
+  content: "😎";
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+#waitingStatus {
+  margin-top: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  animation: blink 1.5s infinite;
+}
+
+/* ❓ Question Screen */
+#questionScreen {
+  background: linear-gradient(135deg, #ff9a9e, #ff6a00);
+  color: #fff;
+}
+.question-card {
+  background: rgba(255,255,255,0.9);
+  color: #222;
+  padding: 30px;
+  border-radius: 16px;
+  width: 70%;
+  max-width: 600px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+.question-card h2 { font-size: 1.8rem; }
+#timerText { margin-top: 10px; font-weight: bold; color: #fffde7; }
+
+/* ✍️ Answer Screen */
+#answerScreen {
+  background: linear-gradient(135deg, #43cea2, #185a9d);
+  color: #fff;
+}
+
+.answer-heading {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+}
+
+.answer-card {
+  background: rgba(255,255,255,0.9);
+  color: #222;
+  padding: 20px;
+  border-radius: 16px;
+  width: 70%;
+  max-width: 600px;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+.answer-input {
+  width: 75%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.submit-btn {
+  background: #ffca28;
+  color: #222;
+  font-size: 1.1rem;
+  padding: 12px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.submit-btn:hover { background: #ffc107; transform: scale(1.05); }
+
+/* 🗳 Voting Screen */
+#voteScreen {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  color: #fff;
+}
+#answersList { margin-top: 20px; width: 80%; }
+#answersList button {
+  margin: 10px auto;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  width: 70%;
+  background: #fff;
+  color: #333;
+  border: 2px solid #a18cd1;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+#answersList button:hover { background: #fbc2eb; color: #000; }
+
+/* ✅ Results Screen */
+#resultScreen {
+  background: linear-gradient(135deg, #56ab2f, #a8e063);
+  color: #fff;
+}
+#funniestAnswer {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fffde7;
+}
+#roundDetails {
+  margin-top: 15px;
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+/* 🏆 Scoreboard Screen */
+#scoreScreen {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: #333;
+}
+#scoreBoard {
+  list-style: none;
+  padding: 0;
+}
+#scoreBoard li {
+  background: rgba(255,255,255,0.9);
+  border: 2px solid #fbc02d;
+  margin: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* 🎉 Animations */
+@keyframes blink { 50% { opacity: 0.5; } }
+
+/* ================= THEME OVERRIDES ================= */
+
+/* Normal */
+body.normal-mode #waitingRoomScreen { background: #fffde7; }
+body.normal-mode #waitingStatus { color: #ff5722; }
+
+/* Dating */
+body.dating-mode #waitingRoomScreen { background: #ffe4ec; }
+body.dating-mode #waitingStatus { color: #c2185b; }
+
+/* Office Party */
+body.officeparty-mode #waitingRoomScreen { background: #e3f2fd; }
+body.officeparty-mode #waitingStatus { color: #1565c0; }
+
+/* House Party */
+body.houseparty-mode #waitingRoomScreen { background: #fff3e0; }
+body.houseparty-mode #waitingStatus { color: #ef6c00; }

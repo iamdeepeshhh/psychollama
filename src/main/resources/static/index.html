@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PsychOllama</title>
+    <link rel="stylesheet" href="/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+</head>
+<body class="normal-mode">
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+    <div class="lobby-container">
+        <h1 class="game-title">PsychOllama</h1>
+        <p class="tagline">Write the funniest answers. Fool your friends. Win the crown!</p>
+
+        <div class="input-box">
+            <input type="text" id="playerName" placeholder="Enter your name">
+            <input type="text" id="roomCode" placeholder="Room Code">
+
+            <!-- 🎨 Mode Selector -->
+            <select id="gameMode">
+                <option value="normal">🎯 Normal</option>
+                <option value="dating">💘 Dating</option>
+                <option value="officeparty">🏢 Office Party</option>
+                <option value="houseparty">🏠 House Party</option>
+            </select>
+            <select id="gameLanguage">
+                <option value="english">🇬🇧 English</option>
+                <option value="hindi">🇮🇳 Hindi</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button class="btn primary" onclick="joinGame()">Join Game</button>
+            <button class="btn secondary" onclick="createRoom()">Create Room</button>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Waiting Room -->
+<div id="waitingRoomScreen" class="screen hidden">
+    <h2>Waiting Room</h2>
+    <p>Room Code: <span id="roomCodeDisplay"></span></p>
+    <div id="playersList"></div>
+
+    <div class="input-box">
+        <input type="text" id="playerTopic" placeholder="Enter a topic (e.g., Movies, Food)">
+        <button id="topicSubmitBtn" class="btn primary" onclick="submitTopic()">Submit Topic</button>
+    </div>
+
+    <button id="readyBtn" class="btn secondary" onclick="readyUp()" disabled>Ready</button>
+    <p id="waitingStatus">Waiting for all players...</p>
+</div>
+
+<!-- Question Screen -->
+<div id="questionScreen" class="screen hidden">
+    <div class="question-card">
+        <h2 id="questionText"></h2>
+    </div>
+    <p id="timerText">Time left: <span id="timeLeft">30</span>s</p>
+    <button class="btn primary" onclick="goToAnswer()">Answer Now</button>
+</div>
+
+<!-- Answer Screen -->
+<div id="answerScreen" class="screen hidden">
+    <h2 class="answer-heading">Type Your Funniest Answer!</h2>
+
+    <!-- Question box -->
+    <div id="answerQuestionBox" class="answer-card">
+        <p id="answerQuestionText">Loading question...</p>
+    </div>
+
+    <!-- Input -->
+    <input type="text" id="answerInput" class="answer-input" placeholder="Make everyone laugh" autofocus />
+
+    <!-- Submit -->
+    <button class="btn primary submit-btn" onclick="submitAnswer()">Submit Answer</button>
+</div>
+
+
+
+<!-- Voting Screen -->
+<div id="voteScreen" class="screen hidden">
+    <h2>Vote for the funniest answer!</h2>
+    <div id="answersList"></div>
+</div>
+
+<!-- Results Screen -->
+<div id="resultScreen" class="hidden">
+    <h3 id="funniestAnswer"></h3>
+    <canvas id="voteChart" width="320" height="320"></canvas>
+    <div id="voteBreakdown" class="vote-breakdown"></div>
+</div>
+
+<!-- Scoreboard Screen -->
+<div id="scoreScreen" class="screen hidden">
+    <h2>Leaderboard</h2>
+    <ul id="scoreBoard"></ul>
+    <button class="btn primary" onclick="nextRound()">Next Round</button>
+</div>
+
+<script src="/script.js"></script>
+</body>
+</html>
