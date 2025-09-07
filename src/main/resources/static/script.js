@@ -20,6 +20,7 @@ function clearPhaseTimers() {
 function showCurrentQuestion() {
   clearPhaseTimers();
   const q = currentQuestions.find(q => q.sequence === currentSequence);
+  console.log(`➡️ Showing Q${currentSequence}/${currentQuestions.length}:`, q ? q.text : "❌ Not found");
   if (!q) return;
 
   document.getElementById("questionText").innerText = q.text;
@@ -444,6 +445,7 @@ showScreen("resultScreen");
 async function renderVoteResults() {
   try {
     const resp = await fetch(`${backendUrl}/vote/results?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
+    console.log(`✅ Vote finished for Q${currentSequence}, moving to next`);
     if (!resp.ok) throw new Error("Failed to load vote results");
     const data = await resp.json();
     // data = { expectedVoters, totalVotes, byAnswer: [{answerId, text, playerId, playerName, votes, voterIds: [{id,name}]}], voters: [{voterId, voterName, votedAnswerId}] }
