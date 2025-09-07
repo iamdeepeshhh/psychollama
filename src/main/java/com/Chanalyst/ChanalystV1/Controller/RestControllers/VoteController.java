@@ -18,11 +18,13 @@ public class VoteController {
     @PostMapping
     public ResponseEntity<String> vote(
             @RequestParam Long voterId,
-            @RequestParam Long answerId
+            @RequestParam Long answerId,
+            @RequestParam String roomCode
     ) {
-        voteService.registerVote(voterId, answerId);
+        voteService.registerVote(voterId, answerId, roomCode);
         return ResponseEntity.ok("Vote registered successfully!");
     }
+
 
     @GetMapping("/all-voted")
     public ResponseEntity<Boolean> allVoted(

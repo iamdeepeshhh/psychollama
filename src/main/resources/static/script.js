@@ -191,7 +191,7 @@ async function readyUp() {
           clearInterval(interval);
 
           // 👇 now that ALL are ready → start polling starter questions
-          let countdown = 16;
+          let countdown = 15;
           document.getElementById("waitingStatus").innerText =
             `All players ready! Starting in ${countdown}s...`;
 
@@ -203,14 +203,18 @@ async function readyUp() {
             if (countdown <= 0) {
               clearInterval(timer);
 
-              // Show loading screen
-              document.getElementById("waitingStatus").innerText = "All players ready!";
-              showScreen("loadingScreen");
+              // Show loading screen ONLY before first round
+              if (currentRound === 1) {
+                document.getElementById("waitingStatus").innerText = "All players ready!";
+                showScreen("loadingScreen");
 
-              // ⏳ Small delay to show animation, then start game
-              setTimeout(() => {
-                startGame(1);
-              }, 3000); // 3s "give us a moment"
+                // ⏳ Small delay to show animation, then start game
+                setTimeout(() => {
+                  startGame(1);
+                }, 3000);
+              } else {
+                startGame(currentRound); // directly go if not round 1
+              }
             }
           }, 1000);
         }
@@ -236,6 +240,7 @@ async function startGame(round = 1) {
     const resp = await fetch(`${backendUrl}/game/questions/${roomCode}/round/${round}`);
     if (!resp.ok) throw new Error("Failed to fetch questions");
     currentQuestions = await resp.json();
+    currentQuestions.sort((a, b) => a.sequence - b.sequence); // ✅ keep order
   }
 
   if (currentQuestions.length > 0) {
@@ -389,7 +394,10 @@ async function loadVoting() {
 // Vote
 async function vote(answerId) {
   try {
-    const resp = await fetch(`${backendUrl}/vote?voterId=${playerId}&answerId=${answerId}`, { method: "POST" });
+    const resp = await fetch(
+      `${backendUrl}/vote?voterId=${playerId}&answerId=${answerId}&roomCode=${roomCode}&mode=${gameMode}`,
+      { method: "POST" }
+    );
     if (!resp.ok) {
       try {
         const errJson = await resp.json();
@@ -564,4 +572,5 @@ function changeMode() {
             break;
     }
 }
+
 

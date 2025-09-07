@@ -69,6 +69,7 @@ public class QuestionGeneratorService {
             List<String> questionTexts = Arrays.stream(raw.split("\\d+[.)-]"))
                     .map(String::trim)
                     .filter(q -> !q.isEmpty())
+                    .filter(q -> q.endsWith("?"))   // ✅ only keep real questions
                     .toList();
 
             List<Question> saved = new ArrayList<>();
@@ -261,20 +262,21 @@ public class QuestionGeneratorService {
 
         // ✅ Final assembly
         return """
-        Generate %d UNIQUE, hilarious one-liner PARTY QUESTIONS.
-        
-        %s
-        %s
-        %s
-        %s
-        %s
-        
-        OUTPUT INSTRUCTIONS:
-        - Strictly a numbered list (1 to %d)
-        - EVERY line MUST be a single QUESTION ending with a '?'
-        - Do NOT give answers, explanations, or filler text.
-        - Do NOT write statements. ONLY questions allowed.
-        """.formatted(count, modeStyle, roundStyle, rules, langInstruction, examples, count);
+            Generate %d UNIQUE, hilarious one-liner PARTY QUESTIONS.
+            
+            %s
+            %s
+            %s
+            %s
+            %s
+            
+            OUTPUT RULES:
+            - Strictly a numbered list (1 to %d).
+            - EVERY line MUST be a single QUESTION ending with a '?'.
+            - Do NOT add any introductions, comments, or extra text like "Here are your questions".
+            - Do NOT write "Wow", "Sure", or anything except the numbered questions.
+            - Start directly at "1." and continue.
+            """.formatted(count, modeStyle, roundStyle, rules, langInstruction, examples, count);
     }
 
     /**

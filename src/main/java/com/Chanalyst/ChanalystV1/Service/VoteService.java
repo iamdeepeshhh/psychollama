@@ -7,6 +7,7 @@ import com.Chanalyst.ChanalystV1.Entity.Room;
 import com.Chanalyst.ChanalystV1.Entity.Vote;
 import com.Chanalyst.ChanalystV1.Repository.AnswerRepository;
 import com.Chanalyst.ChanalystV1.Repository.PlayerRepository;
+import com.Chanalyst.ChanalystV1.Repository.RoomRepository;
 import com.Chanalyst.ChanalystV1.Repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,24 +29,27 @@ public class VoteService {
     private final VoteRepository voteRepo;
     private final AnswerRepository answerRepo;
     private final PlayerRepository playerRepo;
-
+    private final RoomRepository roomRepository;
     private final RoomService roomService;
 
-    public void registerVote(Long voterId, Long answerId) {
+    public void registerVote(Long voterId, Long answerId, String roomCode) {
         Player voter = playerRepo.findById(voterId)
                 .orElseThrow(() -> new RuntimeException("Voter not found"));
         Answer answer = answerRepo.findById(answerId)
                 .orElseThrow(() -> new RuntimeException("Answer not found"));
 
-        // Prevent self-voting
-        if (answer.getPlayer().getId().equals(voter.getId())) {
+        Room room = roomRepository .findByCode(roomCode)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        // ✅ Enforce mode rule here
+        if (!"dating".equalsIgnoreCase(room.getMode()) &&
+                answer.getPlayer().getId().equals(voter.getId())) {
             throw new RuntimeException("You cannot vote for your own answer!");
         }
 
-        // Prevent multiple votes on the same question by the same voter
-        Room room = answer.getRoom();
         int round = answer.getRound();
         int sequence = answer.getSequence();
+
         if (voteRepo.existsByVoterAndAnswer_RoomAndAnswer_RoundAndAnswer_Sequence(voter, room, round, sequence)) {
             throw new RuntimeException("You have already voted on this question!");
         }
@@ -56,13 +60,13 @@ public class VoteService {
         vote.setAnswer(answer);
         voteRepo.save(vote);
 
-        // Increment votes for answer
+        // Increment votes
         answer.setVotes(answer.getVotes() + 1);
         answerRepo.save(answer);
 
-        // Award points to the player who wrote the answer
+        // Award points
         Player answerOwner = answer.getPlayer();
-        answerOwner.setPoints(answerOwner.getPoints() + 10); // e.g. +10 per vote
+        answerOwner.setPoints(answerOwner.getPoints() + 10);
         playerRepo.save(answerOwner);
     }
 
