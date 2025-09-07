@@ -8,6 +8,7 @@ let votingPollInFlight = false; // optional: prevents overlapping polls
 let activeQuestionKey = ""; // track which question is active to avoid stale updates
 let movedToVote = false;      // track whether we've navigated to vote for this question
 let questionTimer = null;     // countdown timer handle for question phase
+let gameMode = "normal"; // default
 
 function clearPhaseTimers() {
   if (answerCheckInterval) { clearInterval(answerCheckInterval); answerCheckInterval = null; }
@@ -67,7 +68,7 @@ async function createRoom() {
 
     roomCode = room.code;
     playerId = player.id;
-
+    gameMode = room.mode;
     alert(`Room created! Code: ${roomCode} | Mode: ${room.mode} | Language: ${room.language}`);
     document.getElementById("roomCodeDisplay").innerText = roomCode;
 
@@ -98,7 +99,7 @@ async function joinGame() {
 
     playerId = player.id;
     roomCode = room.code;
-
+    gameMode = room.mode;
     // 🎨 Apply theme
     applyTheme(room.mode);
 
@@ -201,8 +202,15 @@ async function readyUp() {
 
             if (countdown <= 0) {
               clearInterval(timer);
-              // 🟢 begin round 1 → fetch starter questions here
-              startGame(1);
+
+              // Show loading screen
+              document.getElementById("waitingStatus").innerText = "All players ready!";
+              showScreen("loadingScreen");
+
+              // ⏳ Small delay to show animation, then start game
+              setTimeout(() => {
+                startGame(1);
+              }, 3000); // 3s "give us a moment"
             }
           }, 1000);
         }
@@ -362,7 +370,7 @@ async function loadVoting() {
     answers.forEach(a => {
       const btn = document.createElement("button");
       btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
-      if (a.playerId === playerId) {
+      if (a.playerId === playerId && gameMode !== "dating") {
         btn.disabled = true;
         btn.title = "You can't vote for yourself";
       } else {
@@ -392,8 +400,10 @@ async function vote(answerId) {
     }
 
     // Show waiting-for-votes screen
-    document.getElementById("funniestAnswer").innerText = "Thanks! Waiting for everyone to vote...";
-    showScreen("resultScreen");
+    document.getElementById("funniestAnswer").innerText = gameMode === "dating"
+                                                              ? "Thanks! Waiting for results..."
+                                                              : "Thanks! Waiting for everyone to vote...";
+showScreen("resultScreen");
 
     // Poll until everyone voted
     if (voteResultsPoll) clearInterval(voteResultsPoll);

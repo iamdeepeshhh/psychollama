@@ -261,17 +261,19 @@ public class QuestionGeneratorService {
 
         // ✅ Final assembly
         return """
-        Generate %d UNIQUE, hilarious one-liner party questions.
-
+        Generate %d UNIQUE, hilarious one-liner PARTY QUESTIONS.
+        
         %s
         %s
         %s
         %s
         %s
-
-        OUTPUT:
-        - Strictly numbered list (1 to %d)
-        - Only the questions. No explanations, no 'why', no metaphors, no filler.
+        
+        OUTPUT INSTRUCTIONS:
+        - Strictly a numbered list (1 to %d)
+        - EVERY line MUST be a single QUESTION ending with a '?'
+        - Do NOT give answers, explanations, or filler text.
+        - Do NOT write statements. ONLY questions allowed.
         """.formatted(count, modeStyle, roundStyle, rules, langInstruction, examples, count);
     }
 
