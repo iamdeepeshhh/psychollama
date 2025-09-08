@@ -56,12 +56,13 @@
 
 <!-- Question Screen -->
 <div id="questionScreen" class="screen hidden">
-    <div class="question-card">
+    <div class="question-share-card">
+        <div class="branding">🎉 PsychOllama</div>
         <h2 id="questionText"></h2>
+        <div class="footer-hashtag">#PsychOllama | Answer in <span id="timeLeft">20</span>s ⏳</div>
     </div>
-    <p id="timerText">Time left: <span id="timeLeft">30</span>s</p>
-    <button class="btn primary" onclick="goToAnswer()">Answer Now</button>
 </div>
+
 
 <!-- Answer Screen -->
 <div id="answerScreen" class="screen hidden">
@@ -88,11 +89,20 @@
 </div>
 
 <!-- Results Screen -->
-<div id="resultScreen" class="hidden">
-    <h3 id="funniestAnswer"></h3>
+<!-- Results Screen -->
+<div id="resultScreen" class="screen hidden">
+    <div class="winner-share-card">
+        <div class="trophy">🏆</div>
+        <h2 id="funniestAnswer"></h2>
+        <p class="winner-tag">#PsychOllama Champion 🎉</p>
+        <button class="btn secondary" onclick="shareResult()">📤 Share this result</button>
+    </div>
+
+    <!-- 📊 Vote Visualization -->
     <canvas id="voteChart" width="320" height="320"></canvas>
     <div id="voteBreakdown" class="vote-breakdown"></div>
 </div>
+
 
 <!-- Scoreboard Screen -->
 <div id="scoreScreen" class="screen hidden">
@@ -101,11 +111,20 @@
     <button class="btn primary" onclick="nextRound()">Next Round</button>
 </div>
 
-<div id="loadingScreen" class="hidden">
+<!-- Loading Screen -->
+<div id="loadingScreen" class="screen hidden">
     <h2>🤖 Give us a moment...</h2>
     <div class="loader"></div>
     <p>Generating the funniest questions just for you!</p>
+
+    <!-- 🎮 Mini Emoji Game -->
+    <div id="miniGame">
+        <p class="mini-game-instructions">🎮 Catch emojis while you wait!</p>
+        <div id="gameArea"></div>
+        <p id="gameScore">Score: 0</p>
+    </div>
 </div>
+
 <script src="/script.js"></script>
 </body>
 </html>

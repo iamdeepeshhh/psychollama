@@ -9,7 +9,66 @@ let activeQuestionKey = ""; // track which question is active to avoid stale upd
 let movedToVote = false;      // track whether we've navigated to vote for this question
 let questionTimer = null;     // countdown timer handle for question phase
 let gameMode = "normal"; // default
+const loadingMessages = [
+  "🎉 PsychOllama is preparing the chaos...",
+  "😂 Warming up the llamas...",
+  "🔥 Spicing up the questions...",
+  "🥳 Almost there, get ready to laugh!",
+  "🍕 Ordering extra cheese jokes...",
+  "🤪 Making things weird in a good way...",
+  "🦙 Our llama is thinking really hard...",
+  "🎭 Mixing comedy with chaos...",
+  "📢 Llamas whispering the funniest secrets...",
+  "💡 Crafting brain-tickling questions...",
+  "🎮 Setting the stage for ultimate fun...",
+  "🥤 Loading silliness… please hold your soda!",
+  "🎶 Playing dramatic background music...",
+  "🤔 Wondering why the chicken crossed the road...",
+  "📦 Delivering laughter in small packages...",
+  "💥 Explosions of jokes loading...",
+  "🚀 PsychOllama is taking off...",
+  "👑 Polishing the crown for the winner...",
+  "📸 Perfecting your share-worthy screenshots...",
+  "🥕 Feeding carrots to the llamas...",
+  "🔮 Predicting who’s about to be roasted...",
+  "🎲 Rolling dice of destiny...",
+  "🎯 Aiming jokes at your funny bone...",
+  "💻 Debugging your sense of humor...",
+  "🥸 Adding fake mustaches to answers...",
+  "📚 Reading Dad jokes for inspiration...",
+  "🎃 Scaring away boring moments...",
+  "🏆 Preparing victory speeches...",
+  "🛠 Fixing glitches with duct tape...",
+  "💤 Waking up the sleepy llama...",
+  "🍿 Cooking popcorn for the show...",
+  "📱 Testing memes on social media...",
+  "💫 Making your answers 20% funnier...",
+  "🎂 Baking a cake of chaos...",
+  "🐙 An octopus is helping shuffle questions...",
+  "🛸 Aliens beaming down some comedy...",
+  "🎨 Painting jokes with extra colors...",
+  "🏖 Adding beach vibes to your party...",
+  "🕵️ Investigating who’s the funniest...",
+  "🎤 Testing the mic: ha-ha 1, ha-ha 2...",
+  "🎬 Directing the funniest movie ever...",
+  "🎹 Composing laugh tracks...",
+  "🤯 Trying to outsmart your answers...",
+  "🍭 Handing out sugar rush to players...",
+  "🧩 Puzzling together your chaos...",
+  "👾 8-bit llamas are coding new jokes..."
+];
 
+let usedMessages = [];
+
+function getNextLoadingMessage() {
+  if (usedMessages.length === loadingMessages.length) {
+    usedMessages = []; // reset when exhausted
+  }
+  const remaining = loadingMessages.filter(m => !usedMessages.includes(m));
+  const msg = remaining[Math.floor(Math.random() * remaining.length)];
+  usedMessages.push(msg);
+  return msg;
+}
 function clearPhaseTimers() {
   if (answerCheckInterval) { clearInterval(answerCheckInterval); answerCheckInterval = null; }
   if (votingCheckTimeout)  { clearTimeout(votingCheckTimeout); votingCheckTimeout = null; }
@@ -594,6 +653,85 @@ async function safeFetch(url, options = {}, retries = 3, delay = 2000) {
     if (waiting) waiting.innerText = "⚠️ Connection lost. Trying to reconnect...";
     throw err;
   }
+}
+
+function shareResult() {
+  const text = document.getElementById("funniestAnswer").innerText;
+  if (navigator.share) {
+    navigator.share({
+      title: "PsychOllama",
+      text: `😂 ${text} #PsychOllama`,
+      url: window.location.href
+    });
+  } else {
+    alert("Copy this to share: " + text);
+  }
+}
+
+// 🎮 Mini emoji game logic
+let score = 0;
+let emojiInterval;
+
+function startMiniGame() {
+  const gameArea = document.getElementById("gameArea");
+  score = 0;
+  document.getElementById("gameScore").innerText = "Score: 0";
+
+  // Clear previous interval if running
+  if (emojiInterval) clearInterval(emojiInterval);
+
+  // Spawn emojis every 1.2s
+  emojiInterval = setInterval(() => {
+    const emoji = document.createElement("div");
+    emoji.className = "emoji";
+    emoji.innerText = ["😂","🎉","🔥","🍕","🥳","🤪","🦙"][Math.floor(Math.random()*7)];
+    emoji.style.left = Math.random() * 200 + "px";
+
+    // Click to catch
+    emoji.onclick = () => {
+      score++;
+      document.getElementById("gameScore").innerText = `Score: ${score}`;
+      emoji.remove();
+    };
+
+    // Remove if it reaches bottom
+    emoji.addEventListener("animationend", () => emoji.remove());
+
+    gameArea.appendChild(emoji);
+  }, 1200);
+}
+
+function stopMiniGame() {
+  if (emojiInterval) clearInterval(emojiInterval);
+  emojiInterval = null;
+  const gameArea = document.getElementById("gameArea");
+  if (gameArea) gameArea.innerHTML = ""; // clear emojis when leaving
+}
+
+
+
+function showLoadingScreen() {
+  showScreen("loadingScreen");
+  startMiniGame();
+
+  const status = document.querySelector("#loadingScreen p");
+
+  function cycle() {
+    status.innerText = getNextLoadingMessage();
+  }
+
+  cycle(); // set first message immediately
+  const msgInterval = setInterval(cycle, 3000);
+
+  // stop cycling when leaving loading screen
+  const observer = new MutationObserver(() => {
+    if (document.getElementById("loadingScreen").classList.contains("hidden")) {
+      clearInterval(msgInterval);
+      stopMiniGame();   // cleanup mini-game too
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.getElementById("loadingScreen"), { attributes: true });
 }
 
 
