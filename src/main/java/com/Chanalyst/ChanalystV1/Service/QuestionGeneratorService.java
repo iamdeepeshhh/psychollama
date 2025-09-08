@@ -200,6 +200,7 @@ public class QuestionGeneratorService {
         - Use given topics for inspiration: %s
         - Keep it direct, punchy, and instantly funny.
         - Think like a stand-up comedian hosting a party.
+        - Don't make grammatical mistakes.
         """.formatted(players, topics);
 
         // 🌟 Examples by mode
