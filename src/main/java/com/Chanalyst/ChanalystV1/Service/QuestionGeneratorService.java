@@ -145,6 +145,7 @@ public class QuestionGeneratorService {
                     .orElse(0);
 
             for (String text : questionTexts) {
+                if (!isValidQuestion(text)) continue;
                 if (isDuplicate(text, pastQuestions)) continue;
                 if (baseSeq >= 5) break; // cap at 5 per round
 
@@ -263,21 +264,39 @@ public class QuestionGeneratorService {
 
         // ✅ Final assembly
         return """
-            Generate %d UNIQUE, hilarious one-liner PARTY QUESTIONS.
-            
-            %s
-            %s
-            %s
-            %s
-            %s
-            
-            OUTPUT RULES:
-            - Strictly a numbered list (1 to %d).
-            - EVERY line MUST be a single QUESTION ending with a '?'.
-            - Do NOT add any introductions, comments, or extra text like "Here are your questions".
-            - Do NOT write "Wow", "Sure", or anything except the numbered questions.
-            - Start directly at "1." and continue.
-            """.formatted(count, modeStyle, roundStyle, rules, langInstruction, examples, count);
+        Generate %d UNIQUE, hilarious one-liner PARTY QUESTIONS.
+
+        %s
+        %s
+        %s
+        %s
+        %s
+
+        EXTRA REQUIREMENTS:
+        - Each question ≤ 20 words.
+        - EVERY question MUST be meaningful, relevant, and understandable.
+        - No filler, no nonsense, no repeated patterns.
+        - Each question should be funny but still make sense in a party game.
+        - At least 2 questions must mention BOTH players: %s.
+        - At least 1 must use topics: %s.
+        - Cover variety: (1 food, 1 relationship, 1 pop culture, 1 embarrassing habit, 1 random chaos).
+        - Use exaggeration, sarcasm, and playful roasting.
+        - Questions must feel shareable, like viral memes.
+
+        OUTPUT RULES:
+        - Output ONLY the numbered list of questions.
+        - Do NOT write anything else — no introductions, no explanations, no headings.
+        - Do NOT write "Here are", "Okay", "Sure", or any filler text.
+        - The very first character of the response MUST be "1".
+        - Each line MUST end with a "?".
+                - Every line MUST be a valid question, not a statement with a "?" added.
+                - Each question must clearly ask "who", "what", "which", "can", "would", etc.
+                - Do NOT output broken grammar or incomplete thoughts.
+        - Generate exactly %d questions, numbered 1 to %d.
+        """.formatted(
+                count, modeStyle, roundStyle, rules, langInstruction, examples, players, topics, count, count
+        );
+
     }
 
     /**
@@ -304,6 +323,21 @@ public class QuestionGeneratorService {
         Room room = roomService.findByCode(roomCode)
                 .orElseThrow(() -> new RuntimeException("Room not found!"));
         questionRepository.deleteByRoom(room);
+    }
+
+    private boolean isValidQuestion(String q) {
+        // Must end with "?"
+        if (!q.endsWith("?")) return false;
+
+        // Must start with a question word or style
+        String lower = q.toLowerCase();
+        String[] validStarts = {"who", "what", "which", "when", "where", "would", "could", "can", "is", "are", "do", "does"};
+        boolean startsValid = Arrays.stream(validStarts).anyMatch(lower::startsWith);
+
+        // Minimum length (avoid super short junk like "Ok?")
+        boolean longEnough = q.length() > 10;
+
+        return startsValid && longEnough;
     }
 
     @Scheduled(fixedRate = 1000)

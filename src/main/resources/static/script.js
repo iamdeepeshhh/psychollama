@@ -266,7 +266,7 @@ async function readyUp() {
               // Show loading screen ONLY before first round
               if (currentRound === 1) {
                 document.getElementById("waitingStatus").innerText = "All players ready!";
-                showScreen("loadingScreen");
+                showLoadingScreen()
 
                 // ⏳ Small delay to show animation, then start game
                 setTimeout(() => {
@@ -731,7 +731,7 @@ function showLoadingScreen() {
       observer.disconnect();
     }
   });
-  observer.observe(document.getElementById("loadingScreen"), { attributes: true });
+  observer.observe(document.body, { attributes: true, subtree: true });
 }
 
 
