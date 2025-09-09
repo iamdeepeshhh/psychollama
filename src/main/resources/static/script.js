@@ -115,7 +115,7 @@ async function createRoom() {
   if (!playerName) return alert("Enter your name!");
 
   try {
-    const response = await fetch(
+    const response = await safeFetch(
       `${backendUrl}/room/create?playerName=${encodeURIComponent(playerName)}&mode=${mode}&language=${language}`,
       { method: "POST" }
     );
@@ -147,7 +147,7 @@ async function joinGame() {
   if (!playerName || !roomCode) return alert("Enter name and room code!");
 
   try {
-    const response = await fetch(
+    const response = await safeFetch(
       `${backendUrl}/player/join?name=${encodeURIComponent(playerName)}&roomCode=${roomCode}`,
       { method: "POST" }
     );
@@ -176,7 +176,7 @@ async function joinGame() {
 async function loadPlayers() {
   if (!roomCode) return;
   try {
-    const response = await fetch(`${backendUrl}/player/${roomCode}`);
+    const response = await safeFetch(`${backendUrl}/player/${roomCode}`);
     if (response.ok) {
       const players = await response.json();
       totalPlayers = players.length;   // ✅ update count here
@@ -202,7 +202,7 @@ async function submitTopic() {
   if (!t) return alert("Enter a topic!");
 
   try {
-    const response = await fetch(
+    const response = await safeFetch(
       `${backendUrl}/topic/submit?playerId=${playerId}&roomCode=${roomCode}&name=${encodeURIComponent(t)}`,
       { method: "POST" }
     );
@@ -232,7 +232,7 @@ async function submitTopic() {
 
 async function readyUp() {
   try {
-    const res = await fetch(`${backendUrl}/player/${playerId}/ready`, { method: "POST" });
+    const res = await safeFetch(`${backendUrl}/player/${playerId}/ready`, { method: "POST" });
     if (!res.ok) throw new Error("Failed to mark ready");
 
     isReady = true;
@@ -243,7 +243,7 @@ async function readyUp() {
     // 🔁 Poll until all players are ready
     const interval = setInterval(async () => {
       try {
-        const resp = await fetch(`${backendUrl}/player/${roomCode}/all-ready`);
+        const resp = await safeFetch(`${backendUrl}/player/${roomCode}/all-ready`);
         if (!resp.ok) throw new Error("Error checking ready status");
 
         const allReady = await resp.json();
@@ -297,7 +297,7 @@ async function startGame(round = 1) {
   if (round === 1) {
     currentQuestions = await fetchStarterQuestions(); // will poll until ready
   } else {
-    const resp = await fetch(`${backendUrl}/game/questions/${roomCode}/round/${round}`);
+    const resp = await safeFetch(`${backendUrl}/game/questions/${roomCode}/round/${round}`);
     if (!resp.ok) throw new Error("Failed to fetch questions");
     currentQuestions = await resp.json();
     currentQuestions.sort((a, b) => a.sequence - b.sequence); // ✅ keep order
@@ -315,7 +315,7 @@ async function fetchStarterQuestions() {
   let questions = [];
   while (questions.length === 0) {
     try {
-      const resp = await fetch(`${backendUrl}/game/starter-questions/${roomCode}`);
+      const resp = await safeFetch(`${backendUrl}/game/starter-questions/${roomCode}`);
       if (resp.ok) {
         questions = await resp.json();
       }
@@ -374,7 +374,7 @@ async function submitAnswer() {
     if (btn) { btn.disabled = true; btn.style.display = "none"; }
     if (questionTimer) { clearInterval(questionTimer); questionTimer = null; }
 
-    const resp = await fetch(
+    const resp = await safeFetch(
       `${backendUrl}/answers/submit?playerId=${playerId}&roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}&text=${encodeURIComponent(ans)}`,
       { method: "POST" }
     );
