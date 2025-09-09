@@ -289,9 +289,10 @@ public class QuestionGeneratorService {
         - Do NOT write "Here are", "Okay", "Sure", or any filler text.
         - The very first character of the response MUST be "1".
         - Each line MUST end with a "?".
-                - Every line MUST be a valid question, not a statement with a "?" added.
-                - Each question must clearly ask "who", "what", "which", "can", "would", etc.
-                - Do NOT output broken grammar or incomplete thoughts.
+        - questions should be meaningful.
+        - Every line MUST be a valid question, not a statement with a "?" added.
+        - Each question must clearly ask "who", "what", "which", "can", "would", etc.
+        - Do NOT output broken grammar or incomplete thoughts.
         - Generate exactly %d questions, numbered 1 to %d.
         """.formatted(
                 count, modeStyle, roundStyle, rules, langInstruction, examples, players, topics, count, count
