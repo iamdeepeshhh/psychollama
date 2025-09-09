@@ -671,35 +671,44 @@ function shareResult() {
 // 🎮 Mini emoji game logic
 let score = 0;
 let emojiInterval;
+let spawnSpeed = 1200; // starting interval
+let fallSpeed = 3;     // starting CSS seconds
 
 function startMiniGame() {
   const gameArea = document.getElementById("gameArea");
   score = 0;
   document.getElementById("gameScore").innerText = "Score: 0";
 
-  // Clear previous interval if running
   if (emojiInterval) clearInterval(emojiInterval);
 
-  // Spawn emojis every 1.2s
-  emojiInterval = setInterval(() => {
+  emojiInterval = setInterval(spawnEmoji, spawnSpeed);
+
+  function spawnEmoji() {
     const emoji = document.createElement("div");
     emoji.className = "emoji";
     emoji.innerText = ["😂","🎉","🔥","🍕","🥳","🤪","🦙"][Math.floor(Math.random()*7)];
     emoji.style.left = Math.random() * 200 + "px";
+    emoji.style.animationDuration = Math.max(1.5, 5 - score * 0.2) + "s";
 
-    // Click to catch
     emoji.onclick = () => {
       score++;
       document.getElementById("gameScore").innerText = `Score: ${score}`;
       emoji.remove();
+
+      // ⏩ speed up every 5 points
+      if (score % 5 === 0 && spawnSpeed > 400) {
+        spawnSpeed -= 100;
+        fallSpeed = Math.max(1, fallSpeed - 0.2);
+        clearInterval(emojiInterval);
+        emojiInterval = setInterval(spawnEmoji, spawnSpeed);
+      }
     };
 
-    // Remove if it reaches bottom
     emoji.addEventListener("animationend", () => emoji.remove());
-
     gameArea.appendChild(emoji);
-  }, 1200);
+  }
 }
+
 
 function stopMiniGame() {
   if (emojiInterval) clearInterval(emojiInterval);
