@@ -84,7 +84,6 @@ function showCurrentQuestion() {
   document.getElementById("questionText").innerText = q.text;
   activeQuestionKey = `${currentRound}:${q.sequence}`;
   movedToVote = false;
-  startTimer(20);
   showScreen("questionScreen");
 }
 
