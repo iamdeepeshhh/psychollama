@@ -79,7 +79,6 @@ function clearPhaseTimers() {
 function showCurrentQuestion() {
   clearPhaseTimers();
   const q = currentQuestions.find(q => q.sequence === currentSequence);
-  console.log(`➡️ Showing Q${currentSequence}/${currentQuestions.length}:`, q ? q.text : "❌ Not found");
   if (!q) return;
 
   document.getElementById("questionText").innerText = q.text;
@@ -341,7 +340,13 @@ function startTimer(sec){
   questionTimer = setInterval(()=>{
     left--;
     document.getElementById("timeLeft").innerText=left;
-    if(left<=0){ clearInterval(questionTimer); questionTimer = null; goToAnswer(); }
+    if(left<=0){
+       clearInterval(questionTimer);
+       questionTimer = null;
+       // Instead of switching screen, just enable input
+       document.getElementById("answerQuestionText").innerText = document.getElementById("questionText").innerText;
+       document.getElementById("answerInput").style.display = "";
+       document.querySelector(".submit-btn").style.display = ""; }
   },1000);
 }
 
