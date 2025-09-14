@@ -468,3 +468,8 @@ body.houseparty-mode {
     font-size: 1rem;
   }
 }
+#questionText {
+  color: #222; /* keep white */
+
+  font-weight: bold;
+}

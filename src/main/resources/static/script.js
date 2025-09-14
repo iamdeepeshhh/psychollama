@@ -78,13 +78,19 @@ function clearPhaseTimers() {
 
 function showCurrentQuestion() {
   clearPhaseTimers();
-  const q = currentQuestions.find(q => q.sequence === currentSequence);
-  if (!q) return;
+    const q = currentQuestions.find(q => q.sequence === currentSequence);
+    if (!q) return;
 
-  document.getElementById("questionText").innerText = q.text;
-  activeQuestionKey = `${currentRound}:${q.sequence}`;
-  movedToVote = false;
-  showScreen("questionScreen");
+    console.log("➡️ Showing Question:", q.text);
+
+    showScreen("questionScreen");   // 👈 show first
+    const el = document.getElementById("questionText");
+    if (el) el.innerText = q.text;  // 👈 set text after showing
+
+    activeQuestionKey = `${currentRound}:${q.sequence}`;
+    movedToVote = false;
+    startTimer(20);
+
 }
 
 
@@ -339,13 +345,7 @@ function startTimer(sec){
   questionTimer = setInterval(()=>{
     left--;
     document.getElementById("timeLeft").innerText=left;
-    if(left<=0){
-       clearInterval(questionTimer);
-       questionTimer = null;
-       // Instead of switching screen, just enable input
-       document.getElementById("answerQuestionText").innerText = document.getElementById("questionText").innerText;
-       document.getElementById("answerInput").style.display = "";
-       document.querySelector(".submit-btn").style.display = ""; }
+    if(left<=0){ clearInterval(questionTimer); questionTimer = null; goToAnswer(); }
   },1000);
 }
 

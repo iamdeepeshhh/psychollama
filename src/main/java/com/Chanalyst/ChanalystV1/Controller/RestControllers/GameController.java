@@ -19,7 +19,7 @@ public class GameController {
 
     private final GameService gameService;
     private final RoomService roomService;
-    private final ScoreService scoreService;
+    private final ScoreService   scoreService;
 
 
 
