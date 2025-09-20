@@ -3,12 +3,12 @@ let topics = {};
 let isReady = false;
 let playerName, roomCode, playerId;
 let backendUrl = window.location.origin;
-let voteResultsPoll = null;
 let votingPollInFlight = false; // optional: prevents overlapping polls
 let activeQuestionKey = ""; // track which question is active to avoid stale updates
 let movedToVote = false;      // track whether we've navigated to vote for this question
 let questionTimer = null;     // countdown timer handle for question phase
 let gameMode = "normal"; // default
+let stompClient = null;
 const loadingMessages = [
   "🎉 PsychOllama is preparing the chaos...",
   "😂 Warming up the llamas...",
@@ -69,28 +69,54 @@ function getNextLoadingMessage() {
   usedMessages.push(msg);
   return msg;
 }
+
+function connectSocket() {
+  const socket = new SockJS(`${backendUrl}/ws-game`); // ✅ new endpoint
+  stompClient = Stomp.over(socket);
+
+  stompClient.connect({}, (frame) => {
+    console.log("✅ Connected: " + frame);
+
+    // Subscribe to game state updates for this room
+    stompClient.subscribe(`/topic/room/${roomCode}`, (message) => {
+      const state = JSON.parse(message.body);
+      handleGameState(state);
+    });
+  });
+}
+
+function handleGameState(state) {
+  console.log("📩 GameState received:", state);
+
+  currentRound = state.round;
+  currentSequence = state.sequence;
+
+  switch (state.phase) {
+    case "question":
+      showQuestion(state.questionText);
+      break;
+    case "vote":
+      loadVoting(state.answers);
+      break;
+    case "result":
+      renderVoteResults(state.results);
+      break;
+    case "scoreboard":
+      showScoreboard(state.scores);
+      break;
+  }
+}
+
 function clearPhaseTimers() {
-  if (answerCheckInterval) { clearInterval(answerCheckInterval); answerCheckInterval = null; }
   if (votingCheckTimeout)  { clearTimeout(votingCheckTimeout); votingCheckTimeout = null; }
-  if (voteResultsPoll)     { clearInterval(voteResultsPoll); voteResultsPoll = null; }
   if (questionTimer)       { clearInterval(questionTimer); questionTimer = null; }
 }
 
-function showCurrentQuestion() {
+function showQuestion(text) {
   clearPhaseTimers();
-    const q = currentQuestions.find(q => q.sequence === currentSequence);
-    if (!q) return;
-
-    console.log("➡️ Showing Question:", q.text);
-
-    showScreen("questionScreen");   // 👈 show first
-    const el = document.getElementById("questionText");
-    if (el) el.innerText = q.text;  // 👈 set text after showing
-
-    activeQuestionKey = `${currentRound}:${q.sequence}`;
-    movedToVote = false;
-    startTimer(20);
-
+  showScreen("questionScreen");
+  document.getElementById("questionText").innerText = text;
+  startTimer(20);
 }
 
 
@@ -98,8 +124,6 @@ function showCurrentQuestion() {
 let currentRound = 1;
 let currentSequence = 1; // 1..N within the round
 let currentQuestions = [];
-let answerCheckInterval = null;
-// let voteResultsPoll declared above; avoid redeclare
 let votingCheckTimeout = null;
 let lastSubmittedAnswerText = "";
 
@@ -133,6 +157,8 @@ async function createRoom() {
     roomCode = room.code;
     playerId = player.id;
     gameMode = room.mode;
+    connectSocket();
+
     alert(`Room created! Code: ${roomCode} | Mode: ${room.mode} | Language: ${room.language}`);
     document.getElementById("roomCodeDisplay").innerText = roomCode;
 
@@ -164,6 +190,7 @@ async function joinGame() {
     playerId = player.id;
     roomCode = room.code;
     gameMode = room.mode;
+    connectSocket();
     // 🎨 Apply theme
     applyTheme(room.mode);
 
@@ -294,46 +321,16 @@ async function readyUp() {
 
 
 // Start Game
-async function startGame(round = 1) {
+function startGame(round = 1) {
   currentRound = round;
   currentSequence = 1;
 
-  if (round === 1) {
-    currentQuestions = await fetchStarterQuestions(); // will poll until ready
-  } else {
-    const resp = await safeFetch(`${backendUrl}/game/questions/${roomCode}/round/${round}`);
-    if (!resp.ok) throw new Error("Failed to fetch questions");
-    currentQuestions = await resp.json();
-    currentQuestions.sort((a, b) => a.sequence - b.sequence); // ✅ keep order
-  }
+  // Instead of fetching, just ask server to start
+  stompClient.send(`/app/room/${roomCode}/round/${round}/start`, {});
 
-  if (currentQuestions.length > 0) {
-    showCurrentQuestion();
-  } else {
-    alert("No questions available yet!");
-  }
+  // Server will broadcast first question as GameState with phase="question"
 }
 
-
-async function fetchStarterQuestions() {
-  let questions = [];
-  while (questions.length === 0) {
-    try {
-      const resp = await safeFetch(`${backendUrl}/game/starter-questions/${roomCode}`);
-      if (resp.ok) {
-        questions = await resp.json();
-      }
-      if (questions.length > 0) {
-        console.log("✅ Starter questions ready:", questions);
-        return questions;
-      }
-    } catch (err) {
-      console.error("Error fetching starter questions:", err);
-    }
-    // wait 1.5s before retry
-    await new Promise(r => setTimeout(r, 1500));
-  }
-}
 
 
 
@@ -374,7 +371,8 @@ async function submitAnswer() {
     // freeze UI
     const input = document.getElementById("answerInput");
     const btn = document.querySelector(".submit-btn");
-    input.disabled = true; input.style.display = "none";
+    input.disabled = true;
+    input.style.display = "none";
     if (btn) { btn.disabled = true; btn.style.display = "none"; }
     if (questionTimer) { clearInterval(questionTimer); questionTimer = null; }
 
@@ -386,74 +384,34 @@ async function submitAnswer() {
 
     lastSubmittedAnswerText = ans;
 
-    // show waiting screen and poll strictly until *all answered*
+    // ✅ Just show waiting screen
     document.getElementById("waitingStatus").innerText = "Waiting for others to answer...";
     showScreen("waitingRoomScreen");
 
-    if (answerCheckInterval) clearInterval(answerCheckInterval);
-    answerCheckInterval = setInterval(checkIfAllAnswered, 1500);
   } catch (err) {
     alert(err.message);
   }
 }
-
-
-
-
-async function checkIfAllAnswered() {
-  try {
-    const url = `${backendUrl}/answers/all-answered?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`;
-    const resp = await safeFetch(url);
-    if (!resp.ok) throw new Error("Check failed");
-
-    const allAnswered = await resp.json();
-    if (allAnswered) {
-      if (answerCheckInterval) { clearInterval(answerCheckInterval); answerCheckInterval = null; }
-      loadVoting(); // go render voting UI now
-    }
-  } catch (err) {
-    console.error("Error checking answers:", err);
-  }
-}
-
-
 
 // Voting phase
-async function loadVoting() {
-  try {
-    const key = `${currentRound}:${currentSequence}`;
-    if (key !== activeQuestionKey) return; // safety
+function loadVoting(answers) {
+  const list = document.getElementById("answersList");
+  list.innerHTML = "";
 
-    movedToVote = true;
+  answers.forEach(a => {
+    const btn = document.createElement("button");
+    btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
+    if (a.playerId === playerId && gameMode !== "dating") {
+      btn.disabled = true;
+      btn.title = "You can't vote for yourself";
+    } else {
+      btn.onclick = () => vote(a.id);
+    }
+    list.appendChild(btn);
+  });
 
-    const resp = await safeFetch(
-      `${backendUrl}/answers/list?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`
-    );
-    if (!resp.ok) throw new Error("Failed to load answers");
-
-    const answers = await resp.json();
-    const list = document.getElementById("answersList");
-    list.innerHTML = "";
-
-    // Show all answers; disable self-vote
-    answers.forEach(a => {
-      const btn = document.createElement("button");
-      btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
-      if (a.playerId === playerId && gameMode !== "dating") {
-        btn.disabled = true;
-        btn.title = "You can't vote for yourself";
-      } else {
-        btn.onclick = () => vote(a.id);
-      }
-      list.appendChild(btn);
-    });
-
-    showScreen("voteScreen");
-  } catch (err) {
-    alert(err.message);
-  }
+  showScreen("voteScreen");
 }
-
 
 // Vote
 async function vote(answerId) {
@@ -471,82 +429,41 @@ async function vote(answerId) {
       }
     }
 
-    // Show waiting-for-votes screen
-    document.getElementById("funniestAnswer").innerText = gameMode === "dating"
-                                                              ? "Thanks! Waiting for results..."
-                                                              : "Thanks! Waiting for everyone to vote...";
-showScreen("resultScreen");
+    // ✅ Show waiting screen only
+    document.getElementById("funniestAnswer").innerText =
+      gameMode === "dating"
+        ? "Thanks! Waiting for results..."
+        : "Thanks! Waiting for everyone to vote...";
 
-    // Poll until everyone voted
-    if (voteResultsPoll) clearInterval(voteResultsPoll);
-    const thisKey = activeQuestionKey;
-    voteResultsPoll = setInterval(async () => {
-      try {
-        if (thisKey !== activeQuestionKey) { clearInterval(voteResultsPoll); voteResultsPoll = null; return; }
-        // (Optional) keep players fresh so expected is accurate
-        await loadPlayers();
+    showScreen("resultScreen");
 
-        const res = await safeFetch(`${backendUrl}/vote/all-voted?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
-        if (!res.ok) throw new Error("all-voted check failed");
-        const allVoted = await res.json();
-
-        if (allVoted) {
-          clearInterval(voteResultsPoll);
-          voteResultsPoll = null;
-          await renderVoteResults(); // draw pie + who voted
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }, 1500);
+    // ❌ remove polling — backend will broadcast GameState with phase="result"
   } catch (err) {
     alert(err.message);
   }
 }
 
+function renderVoteResults(data) {
+  console.log(`✅ Vote finished for Q${currentSequence}`);
 
-async function renderVoteResults() {
-  try {
-    const resp = await safeFetch(`${backendUrl}/vote/results?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`);
-    console.log(`✅ Vote finished for Q${currentSequence}, moving to next`);
-    if (!resp.ok) throw new Error("Failed to load vote results");
-    const data = await resp.json();
-    // data = { expectedVoters, totalVotes, byAnswer: [{answerId, text, playerId, playerName, votes, voterIds: [{id,name}]}], voters: [{voterId, voterName, votedAnswerId}] }
+  const winner = [...data.byAnswer].sort((a, b) => b.votes - a.votes)[0];
+  const title = winner
+    ? `Winner: “${winner.text}” (${winner.playerName}) — ${winner.votes} vote(s)`
+    : "No votes cast";
+  document.getElementById("funniestAnswer").innerText = title;
 
-    // Headline: winner
-    const winner = [...data.byAnswer].sort((a,b) => b.votes - a.votes)[0];
-    const title = winner
-      ? `Winner: “${winner.text}” (${winner.playerName}) — ${winner.votes} vote(s)`
-      : "No votes cast";
-    document.getElementById("funniestAnswer").innerText = title;
+  drawVotePie("voteChart", data.byAnswer);
 
-    // Draw pie
-    drawVotePie("voteChart", data.byAnswer);
+  const bd = document.getElementById("voteBreakdown");
+  bd.innerHTML = "";
+  data.byAnswer.forEach(a => {
+    const li = document.createElement("div");
+    const voters = (a.voterIds || []).map(v => v.name).join(", ");
+    li.textContent = `“${a.text}” by ${a.playerName} — ${a.votes} vote(s)` + (voters ? ` [${voters}]` : "");
+    bd.appendChild(li);
+  });
 
-    // Breakdown list (who voted for whom)
-    const bd = document.getElementById("voteBreakdown");
-    if (bd) {
-    bd.innerHTML = "";
-    data.byAnswer.forEach(a => {
-      const li = document.createElement("div");
-      const voters = (a.voterIds || []).map(v => v.name).join(", ");
-      li.textContent = `“${a.text}” by ${a.playerName} — ${a.votes} vote(s)` + (voters ? ` [${voters}]` : "");
-      bd.appendChild(li);
-    });
-    }
-
-    // Proceed after a short pause (or show a “Next” button of your choice)
-    setTimeout(() => {
-      if (currentSequence < currentQuestions.length) {
-        currentSequence += 1;
-        showCurrentQuestion();
-      } else {
-        showScoreboard();
-      }
-    }, 5000);
-  } catch (err) {
-    console.error(err);
-  }
+  showScreen("resultScreen");
 }
 
 function drawVotePie(canvasId, buckets) {
@@ -577,26 +494,17 @@ function drawVotePie(canvasId, buckets) {
 
 
 // Scoreboard
-async function showScoreboard() {
+function showScoreboard(scores) {
   showScreen("scoreScreen");
 
-  try {
-    const resp = await safeFetch(`${backendUrl}/game/scoreboard/${roomCode}`);
-    if (!resp.ok) throw new Error("Failed to fetch scoreboard");
+  const board = document.getElementById("scoreBoard");
+  board.innerHTML = "";
 
-    const scores = await resp.json();
-    const board = document.getElementById("scoreBoard");
-    board.innerHTML = "";
-
-    scores.forEach(s => {
-      const li = document.createElement("li");
-      li.textContent = `${s.playerName}: ${s.points} pts`;
-      board.appendChild(li);
-    });
-  } catch (err) {
-    console.error(err);
-    document.getElementById("scoreBoard").innerHTML = "<li>Error loading scores</li>";
-  }
+  scores.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = `${s.playerName}: ${s.points} pts`;
+    board.appendChild(li);
+  });
 }
 
 

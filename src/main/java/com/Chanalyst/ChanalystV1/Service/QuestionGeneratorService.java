@@ -34,69 +34,69 @@ public class QuestionGeneratorService {
     /**
      * Explicit round-based question generation
      */
-    public List<Question> generateStarterQuestions(String roomCode, String mode, int round, String language) {
-        Room room = roomService.findByCode(roomCode)
-                .orElseThrow(() -> new RuntimeException("Room not found!"));
-
-        List<Player> players = playerRepository.findByRoom(room);
-        List<Topic> topics = topicService.getTopicsByRoom(room);
-
-        String playerStr = players.stream().map(Player::getName).collect(Collectors.joining(", "));
-        String topicStr = topics.stream().map(Topic::getName).collect(Collectors.joining(", "));
-
-        List<String> pastQuestions = questionRepository.findByRoom(room)
-                .stream()
-                .map(Question::getText)
-                .toList();
-
-        String pastQStr = String.join("; ", pastQuestions);
-
-        // 👇 Generate exactly 2 starter questions
-        String prompt = buildPrompt(mode, 2, round, playerStr, topicStr, pastQStr, language);
-
-        Map<String, Object> request = Map.of(
-                "model", MODEL,
-                "prompt", prompt,
-                "stream", false
-        );
-
-        try {
-            ResponseEntity<Map> response = restTemplate.build()
-                    .postForEntity(OLLAMA_URL, request, Map.class);
-
-            String raw = Objects.requireNonNull(response.getBody()).get("response").toString();
-
-            List<String> questionTexts = Arrays.stream(raw.split("\\d+[.)-]"))
-                    .map(String::trim)
-                    .filter(q -> !q.isEmpty())
-                    .filter(q -> q.endsWith("?"))   // ✅ only keep real questions
-                    .toList();
-
-            List<Question> saved = new ArrayList<>();
-            for (String text : questionTexts) {
-                int baseSeq = questionRepository.findByRoomAndRoundOrderBySequenceAsc(room, round)
-                        .stream()
-                        .mapToInt(Question::getSequence)
-                        .max()
-                        .orElse(0);
-
-                if (baseSeq >= 5) break; // no more than 5
-
-                Question q = new Question();
-                q.setText(text);
-                q.setRoom(room);
-                q.setRound(round);
-                q.setSequence(baseSeq + 1); // 🚀 keep sequence continuous
-
-                saved.add(questionRepository.saveAndFlush(q));
-            }
-            return saved;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return List.of();
-        }
-    }
+//    public List<Question> generateStarterQuestions(String roomCode, String mode, int round, String language) {
+//        Room room = roomService.findByCode(roomCode)
+//                .orElseThrow(() -> new RuntimeException("Room not found!"));
+//
+//        List<Player> players = playerRepository.findByRoom(room);
+//        List<Topic> topics = topicService.getTopicsByRoom(room);
+//
+//        String playerStr = players.stream().map(Player::getName).collect(Collectors.joining(", "));
+//        String topicStr = topics.stream().map(Topic::getName).collect(Collectors.joining(", "));
+//
+//        List<String> pastQuestions = questionRepository.findByRoom(room)
+//                .stream()
+//                .map(Question::getText)
+//                .toList();
+//
+//        String pastQStr = String.join("; ", pastQuestions);
+//
+//        // 👇 Generate exactly 2 starter questions
+//        String prompt = buildPrompt(mode, 2, round, playerStr, topicStr, pastQStr, language);
+//
+//        Map<String, Object> request = Map.of(
+//                "model", MODEL,
+//                "prompt", prompt,
+//                "stream", false
+//        );
+//
+//        try {
+//            ResponseEntity<Map> response = restTemplate.build()
+//                    .postForEntity(OLLAMA_URL, request, Map.class);
+//
+//            String raw = Objects.requireNonNull(response.getBody()).get("response").toString();
+//
+//            List<String> questionTexts = Arrays.stream(raw.split("\\d+[.)-]"))
+//                    .map(String::trim)
+//                    .filter(q -> !q.isEmpty())
+//                    .filter(q -> q.endsWith("?"))   // ✅ only keep real questions
+//                    .toList();
+//
+//            List<Question> saved = new ArrayList<>();
+//            for (String text : questionTexts) {
+//                int baseSeq = questionRepository.findByRoomAndRoundOrderBySequenceAsc(room, round)
+//                        .stream()
+//                        .mapToInt(Question::getSequence)
+//                        .max()
+//                        .orElse(0);
+//
+//                if (baseSeq >= 5) break; // no more than 5
+//
+//                Question q = new Question();
+//                q.setText(text);
+//                q.setRoom(room);
+//                q.setRound(round);
+//                q.setSequence(baseSeq + 1); // 🚀 keep sequence continuous
+//
+//                saved.add(questionRepository.saveAndFlush(q));
+//            }
+//            return saved;
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return List.of();
+//        }
+//    }
 
 
     public void generateQuestions(String roomCode, int count, String mode, int round, String language) {
