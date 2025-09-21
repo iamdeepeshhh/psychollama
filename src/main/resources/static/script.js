@@ -9,6 +9,8 @@ let movedToVote = false;      // track whether we've navigated to vote for this 
 let questionTimer = null;     // countdown timer handle for question phase
 let gameMode = "normal"; // default
 let stompClient = null;
+let answeredQuestions = new Set();
+
 const loadingMessages = [
   "🎉 PsychOllama is preparing the chaos...",
   "😂 Warming up the llamas...",
@@ -93,19 +95,42 @@ function handleGameState(state) {
 
   switch (state.phase) {
     case "question":
-      showQuestion(state.questionText);
+      const key = `${state.round}-${state.sequence}-${playerId}`;
+      if (answeredQuestions.has(key)) {
+          document.getElementById("waitingStatus").innerText = "Waiting for others to answer...";
+          showScreen("waitingRoomScreen");
+      } else {
+          showQuestion(state.questionText);
+      }
       break;
+
     case "vote":
-      loadVoting(state.answers);
+      if (state.answers && Array.isArray(state.answers)) {
+        loadVoting(state.answers);
+      } else {
+        console.warn("⚠️ No answers received in GameState", state);
+      }
       break;
+
     case "result":
-      renderVoteResults(state.results);
+      if (state.results) {
+        renderVoteResults(state.results);
+      } else {
+        console.warn("⚠️ No results received in GameState", state);
+      }
       break;
+
     case "scoreboard":
-      showScoreboard(state.scores);
+      if (state.scores) {
+        showScoreboard(state.scores);
+      }
       break;
+
+    default:
+      console.warn("⚠️ Unknown game phase:", state.phase);
   }
 }
+
 
 function clearPhaseTimers() {
   if (votingCheckTimeout)  { clearTimeout(votingCheckTimeout); votingCheckTimeout = null; }
@@ -116,7 +141,7 @@ function showQuestion(text) {
   clearPhaseTimers();
   showScreen("questionScreen");
   document.getElementById("questionText").innerText = text;
-  startTimer(20);
+  startTimer(5);
 }
 
 
@@ -368,36 +393,58 @@ async function submitAnswer() {
   if (!ans) return alert("Enter your funny answer!");
 
   try {
-    // freeze UI
-    const input = document.getElementById("answerInput");
-    const btn = document.querySelector(".submit-btn");
-    input.disabled = true;
-    input.style.display = "none";
-    if (btn) { btn.disabled = true; btn.style.display = "none"; }
-    if (questionTimer) { clearInterval(questionTimer); questionTimer = null; }
-
     const resp = await safeFetch(
       `${backendUrl}/answers/submit?playerId=${playerId}&roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}&text=${encodeURIComponent(ans)}`,
       { method: "POST" }
     );
     if (!resp.ok) throw new Error("Failed to submit answer");
 
-    lastSubmittedAnswerText = ans;
+    answeredQuestions.add(`${currentRound}-${currentSequence}-${playerId}`);
 
     // ✅ Just show waiting screen
     document.getElementById("waitingStatus").innerText = "Waiting for others to answer...";
     showScreen("waitingRoomScreen");
+
+    // 🔁 Start polling for all-answered
+    startAllAnsweredPolling();
 
   } catch (err) {
     alert(err.message);
   }
 }
 
+let allAnsweredInterval = null;
+
+function startAllAnsweredPolling() {
+  if (allAnsweredInterval) clearInterval(allAnsweredInterval);
+
+  allAnsweredInterval = setInterval(async () => {
+    try {
+      const resp = await safeFetch(
+        `${backendUrl}/answers/all-answered?roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`
+      );
+      if (!resp.ok) return;
+
+      const done = await resp.json();
+      if (done) {
+        clearInterval(allAnsweredInterval);
+        allAnsweredInterval = null;
+        // ✅ You don’t need to force move client — server will broadcast "vote"
+      }
+    } catch (err) {
+      console.warn("Polling failed:", err);
+    }
+  }, 2000);
+}
+
 // Voting phase
 function loadVoting(answers) {
+  if (!Array.isArray(answers)) {
+    console.error("❌ No answers array in state", answers);
+    return;
+  }
   const list = document.getElementById("answersList");
   list.innerHTML = "";
-
   answers.forEach(a => {
     const btn = document.createElement("button");
     btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
@@ -409,7 +456,6 @@ function loadVoting(answers) {
     }
     list.appendChild(btn);
   });
-
   showScreen("voteScreen");
 }
 
@@ -456,40 +502,73 @@ function renderVoteResults(data) {
 
   const bd = document.getElementById("voteBreakdown");
   bd.innerHTML = "";
+
+  const maxVotes = Math.max(...data.byAnswer.map(a => a.votes || 0));
+
   data.byAnswer.forEach(a => {
     const li = document.createElement("div");
+
+    // 🎨 Dynamic colors
+    if (a.votes === maxVotes && maxVotes > 0) {
+      li.style.color = "green";     // winner highlighted
+      li.style.fontWeight = "bold";
+    } else if (a.votes === 0) {
+      li.style.color = "gray";      // no votes
+    } else {
+      li.style.color = "black";     // normal
+    }
+
     const voters = (a.voterIds || []).map(v => v.name).join(", ");
-    li.textContent = `“${a.text}” by ${a.playerName} — ${a.votes} vote(s)` + (voters ? ` [${voters}]` : "");
+    li.textContent = `“${a.text}” by ${a.playerName} — ${a.votes} vote(s)`
+                   + (voters ? ` [${voters}]` : "");
     bd.appendChild(li);
   });
 
   showScreen("resultScreen");
+  setTimeout(() => {
+   stompClient.send(`/app/room/${roomCode}/round/${currentRound}/next`, {});
+  }, 5000);
 }
 
 function drawVotePie(canvasId, buckets) {
   const c = document.getElementById(canvasId);
-  if (!c) return; // ensure canvas exists in your resultScreen
+  if (!c) return;
   const ctx = c.getContext("2d");
-  ctx.clearRect(0,0,c.width,c.height);
+  ctx.clearRect(0, 0, c.width, c.height);
 
-  const total = Math.max(1, buckets.reduce((s,b)=>s + (b.votes||0), 0));
-  let start = -Math.PI/2;
-  // simple colors; you can style better
+  const total = Math.max(1, buckets.reduce((s, b) => s + (b.votes || 0), 0));
+  let start = -Math.PI / 2;
   const colors = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#b07aa1","#ff9da7"];
 
   buckets.forEach((b, i) => {
     const slice = (b.votes || 0) / total * Math.PI * 2;
+
+    // slice
     ctx.beginPath();
-    ctx.moveTo(c.width/2, c.height/2);
-    ctx.arc(c.width/2, c.height/2, Math.min(c.width,c.height)/2 - 5, start, start + slice);
+    ctx.moveTo(c.width / 2, c.height / 2);
+    ctx.arc(c.width / 2, c.height / 2, Math.min(c.width, c.height) / 2 - 5, start, start + slice);
     ctx.closePath();
     ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
+
+    // ✅ Add label in the middle of slice
+    if (b.votes > 0) {
+      const mid = start + slice / 2;
+      const x = c.width / 2 + Math.cos(mid) * (c.width / 3);
+      const y = c.height / 2 + Math.sin(mid) * (c.height / 3);
+
+      // choose contrasting text color
+      ctx.fillStyle = "#000";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${b.playerName} (${b.votes})`, x, y);
+    }
+
     start += slice;
   });
-
-  // optional: add labels as legend under the canvas — we already list them in voteBreakdown
 }
+
 
 
 

@@ -31,6 +31,7 @@ public class VoteService {
     private final PlayerRepository playerRepo;
     private final RoomRepository roomRepository;
     private final RoomService roomService;
+    private final GameStateService gameStateService;
 
     public void registerVote(Long voterId, Long answerId, String roomCode) {
         Player voter = playerRepo.findById(voterId)
@@ -38,10 +39,10 @@ public class VoteService {
         Answer answer = answerRepo.findById(answerId)
                 .orElseThrow(() -> new RuntimeException("Answer not found"));
 
-        Room room = roomRepository .findByCode(roomCode)
+        Room room = roomRepository.findByCode(roomCode)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        // ✅ Enforce mode rule here
+        // ✅ Enforce mode rule
         if (!"dating".equalsIgnoreCase(room.getMode()) &&
                 answer.getPlayer().getId().equals(voter.getId())) {
             throw new RuntimeException("You cannot vote for your own answer!");
@@ -68,7 +69,16 @@ public class VoteService {
         Player answerOwner = answer.getPlayer();
         answerOwner.setPoints(answerOwner.getPoints() + 10);
         playerRepo.save(answerOwner);
+
+        // 🚀 NEW: after saving, check if everyone voted
+        if (allVoted(roomCode, round, sequence)) {
+            VoteResultsDto.VoteSummary results = results(roomCode, round, sequence);
+
+            // push results to clients
+            gameStateService.broadcastResultPhase(room, round, sequence, results);
+        }
     }
+
 
     public boolean allVoted(String roomCode, int round, int sequence) {
         Room room = roomService.findByCode(roomCode)

@@ -317,7 +317,17 @@ public class QuestionGeneratorService {
     public List<Question> getQuestionsByRoomAndRound(String roomCode, int round) {
         Room room = roomService.findByCode(roomCode)
                 .orElseThrow(() -> new RuntimeException("Room not found!"));
-        return questionRepository.findByRoomAndRoundOrderBySequenceAsc(room, round);
+        List<Question> existing = questionRepository.findByRoomAndRoundOrderBySequenceAsc(room, round);
+
+        if (existing.size() < 5) {
+            int toGenerate = 5 - existing.size();
+            generateQuestions(roomCode, toGenerate, room.getMode(), round, room.getLanguage());
+
+            // re-fetch
+            existing = questionRepository.findByRoomAndRoundOrderBySequenceAsc(room, round);
+        }
+
+        return existing;
     }
 
     public void clearQuestions(String roomCode) {

@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,10 +14,24 @@ public class GameState {
     private int sequence;       // sequence of question in this round
     private String questionText; // the actual question text
     private String phase;       // current phase: "question", "answer", "vote", "result", "scoreboard"
+    // 👇 new fields
+    private List<AnswerDTO> answers;   // only set when phase = "vote"
+    private VoteResultsDto.VoteSummary results; // only set when phase = "result"
+    private List<ScoreDto> scores;
+    private boolean isLastSequence;
+    // only set when phase = "scoreboard"
+
     public GameState(int round, int sequence, String questionText) {
         this.round = round;
         this.sequence = sequence;
         this.questionText = questionText;
-        this.phase = "question"; // default phase if not set
+        this.phase = "question"; // default phase
     }
+    public GameState(int round, int sequence, String questionText, String phase) {
+        this.round = round;
+        this.sequence = sequence;
+        this.questionText = questionText;
+        this.phase = phase;
+    }
+
 }

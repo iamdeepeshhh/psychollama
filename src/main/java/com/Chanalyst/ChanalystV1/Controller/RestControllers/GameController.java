@@ -19,7 +19,7 @@ public class GameController {
 
     private final GameService gameService;
     private final RoomService roomService;
-    private final ScoreService   scoreService;
+    private final ScoreService scoreService;
 
 
 
@@ -29,12 +29,12 @@ public class GameController {
         return ResponseEntity.ok(updatedPlayer);
     }
 
-    @GetMapping("/scoreboard/{roomCode}")
-    public ResponseEntity<List<ScoreDto>> getScoreboard(@PathVariable String roomCode) {
-        Room room = roomService.findByCode(roomCode)
-                .orElseThrow(() -> new RuntimeException("Room not found!"));
-
-        return ResponseEntity.ok(scoreService.getScoresForRoom(room));
-    }
+//    @GetMapping("/scoreboard/{roomCode}")
+//    public ResponseEntity<List<ScoreDto>> getScoreboard(@PathVariable String roomCode) {
+//        Room room = roomService.findByCode(roomCode)
+//                .orElseThrow(() -> new RuntimeException("Room not found!"));
+//
+//        return ResponseEntity.ok(scoreService.getScoresForRoom(room));
+//    }
 
 }

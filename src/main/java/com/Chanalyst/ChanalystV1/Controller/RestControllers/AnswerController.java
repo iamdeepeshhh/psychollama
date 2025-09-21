@@ -1,5 +1,6 @@
 package com.Chanalyst.ChanalystV1.Controller.RestControllers;
 
+import com.Chanalyst.ChanalystV1.DTO.GameState;
 import com.Chanalyst.ChanalystV1.Entity.Answer;
 import com.Chanalyst.ChanalystV1.DTO.AnswerDTO;
 import com.Chanalyst.ChanalystV1.Entity.Player;
@@ -7,11 +8,13 @@ import com.Chanalyst.ChanalystV1.Entity.Room;
 import com.Chanalyst.ChanalystV1.Repository.AnswerRepository;
 import com.Chanalyst.ChanalystV1.Repository.PlayerRepository;
 import com.Chanalyst.ChanalystV1.Service.AnswerService;
+import com.Chanalyst.ChanalystV1.Service.GameStateService;
 import com.Chanalyst.ChanalystV1.Service.PlayerService;
 import com.Chanalyst.ChanalystV1.Service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,9 +27,11 @@ public class AnswerController {
 
     private final AnswerService answerService;
     private final RoomService roomService;
+    private final SimpMessagingTemplate messagingTemplate;
     private final PlayerService playerService;
     private final AnswerRepository answerRepository;
     private final PlayerRepository playerRepository;
+    private final GameStateService gameStateService;
 
     // Submit answer
     @PostMapping("/submit")
@@ -37,8 +42,21 @@ public class AnswerController {
             @RequestParam int sequence,
             @RequestParam String text
     ) {
-        return ResponseEntity.ok(answerService.submitAnswer(playerId, roomCode, round, sequence, text));
+        Answer saved = answerService.submitAnswer(playerId, roomCode, round, sequence, text);
+
+        Room room = roomService.findByCode(roomCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found"));
+
+        long expected = playerRepository.countPlayersInRoom(room); // ✅ use total joined players
+        long actual   = answerRepository.countDistinctPlayersAnswered(room, round, sequence);
+
+        if (expected > 0 && actual >= expected) {
+            gameStateService.broadcastVotePhase(room, round, sequence);
+        }
+
+        return ResponseEntity.ok(saved);
     }
+
 
     @GetMapping("/list")
     public ResponseEntity<List<AnswerDTO>> getAnswersForQuestion(
@@ -80,13 +98,17 @@ public class AnswerController {
         long actual = answerRepository.countDistinctPlayersAnswered(room, round, sequence);
 
         // If you track `ready` on Player, this will be the expected number.
-        // If not, fallback to all players in the room.
         long expected = playerRepository.countReadyPlayers(room);
         if (expected == 0) {
             expected = playerRepository.countPlayersInRoom(room);
         }
 
         boolean done = expected > 0 && actual >= expected;
+
+        if (done) {
+            gameStateService.broadcastVotePhase(room, round, sequence); // 🔑 Move here
+        }
+
         return ResponseEntity.ok(done);
     }
 
