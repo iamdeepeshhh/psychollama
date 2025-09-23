@@ -1,16 +1,13 @@
 package com.Chanalyst.ChanalystV1.Controller.RestControllers;
 
-import com.Chanalyst.ChanalystV1.DTO.ScoreDto;
 import com.Chanalyst.ChanalystV1.Entity.Player;
-import com.Chanalyst.ChanalystV1.Entity.Room;
 import com.Chanalyst.ChanalystV1.Service.GameService;
 import com.Chanalyst.ChanalystV1.Service.RoomService;
-import com.Chanalyst.ChanalystV1.Service.ScoreService;
+import com.Chanalyst.ChanalystV1.Service.ScoreboardService;
+import com.Chanalyst.ChanalystV1.Service.ScoreboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/game")
@@ -19,7 +16,7 @@ public class GameController {
 
     private final GameService gameService;
     private final RoomService roomService;
-    private final ScoreService scoreService;
+    private final ScoreboardService scoreBoardService;
 
 
 

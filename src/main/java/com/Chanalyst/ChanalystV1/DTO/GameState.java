@@ -4,20 +4,23 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class GameState {
     private int round;          // current round number
-    private int sequence;       // sequence of question in this round
+    private int sequence;
+    private Set<String> acks = new HashSet<>();// sequence of question in this round
     private String questionText; // the actual question text
     private String phase;       // current phase: "question", "answer", "vote", "result", "scoreboard"
     // 👇 new fields
     private List<AnswerDTO> answers;   // only set when phase = "vote"
     private VoteResultsDto.VoteSummary results; // only set when phase = "result"
-    private List<ScoreDto> scores;
+    private List<ScoreboardDto> scores;
     private boolean isLastSequence;
     // only set when phase = "scoreboard"
 

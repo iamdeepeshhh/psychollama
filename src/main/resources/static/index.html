@@ -108,9 +108,14 @@
 <div id="scoreScreen" class="screen hidden">
     <h2>Leaderboard</h2>
     <ul id="scoreBoard"></ul>
-    <button class="btn primary" onclick="nextRound()">Next Round</button>
 </div>
 
+<div id="finalScoreScreen" class="screen hidden">
+    <h2>🏆 Final Leaderboard</h2>
+    <ul id="finalScoreBoard"></ul>
+    <p class="winner-message">🎉 Congratulations</p>
+    <button class="btn secondary" onclick="shareResult()">📤 Share Results</button>
+</div>
 <!-- Loading Screen -->
 <div id="loadingScreen" class="screen hidden">
     <h2>Loading PsychOllama...</h2>

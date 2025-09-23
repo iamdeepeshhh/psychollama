@@ -34,6 +34,10 @@ public class PlayerService {
         return playerRepository.findByRoom(room);
     }
 
+    public List<Player> getPlayersByRoomCode(String roomCode) {
+        return playerRepository.findByRoomCode(roomCode);
+    }
+
     public Player markReady(Long playerId) {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found"));

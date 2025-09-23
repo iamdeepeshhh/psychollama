@@ -95,13 +95,8 @@ function handleGameState(state) {
 
   switch (state.phase) {
     case "question":
-      const key = `${state.round}-${state.sequence}-${playerId}`;
-      if (answeredQuestions.has(key)) {
-          document.getElementById("waitingStatus").innerText = "Waiting for others to answer...";
-          showScreen("waitingRoomScreen");
-      } else {
-          showQuestion(state.questionText);
-      }
+      activeQuestionKey = `${state.round}:${state.sequence}`;
+      showQuestion(state.questionText);
       break;
 
     case "vote":
@@ -124,6 +119,10 @@ function handleGameState(state) {
       if (state.scores) {
         showScoreboard(state.scores);
       }
+      break;
+
+    case "final-scoreboard":
+      if (state.scores) showFinalScoreboard(state.scores);
       break;
 
     default:
@@ -526,7 +525,7 @@ function renderVoteResults(data) {
 
   showScreen("resultScreen");
   setTimeout(() => {
-   stompClient.send(`/app/room/${roomCode}/round/${currentRound}/next`, {});
+   stompClient.send(`/app/room/${roomCode}/round/${currentRound}/results-ack`, {}, JSON.stringify({ playerId }));
   }, 5000);
 }
 
@@ -734,4 +733,34 @@ function showLoadingScreen() {
   observer.observe(document.body, { attributes: true, subtree: true });
 }
 
+function showFinalScoreboard(scores) {
+  showScreen("finalScoreScreen"); // switch to final leaderboard screen
 
+  const board = document.getElementById("finalScoreBoard");
+  board.innerHTML = "";
+
+  // Sort by cumulative points descending
+  scores.sort((a, b) => b.cumulativePoints - a.cumulativePoints);
+
+  scores.forEach((s, index) => {
+    const li = document.createElement("li");
+
+    if (index === 0) {
+      li.style.fontWeight = "bold";
+      li.style.color = "gold";
+      li.textContent = `👑 ${s.playerName}: ${s.cumulativePoints} pts`;
+    } else {
+      li.textContent = `${s.playerName}: ${s.cumulativePoints} pts`;
+    }
+
+    board.appendChild(li);
+  });
+
+  // Update winner message
+  const winnerMsg = document.querySelector("#finalScoreScreen .winner-message");
+  if (scores.length > 0) {
+    winnerMsg.innerText = `🎉 Congratulations ${scores[0].playerName}, you are the winner!`;
+  } else {
+    winnerMsg.innerText = "🎉 Game Over! Thanks for playing!";
+  }
+}

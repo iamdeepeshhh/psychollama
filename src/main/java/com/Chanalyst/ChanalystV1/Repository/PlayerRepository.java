@@ -23,6 +23,8 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     @Query("select count(p) from Player p where p.room = :room and p.ready = true")
     long countReadyPlayers(@Param("room") Room room);
 
+    List<Player> findByRoomCode(String roomCode);
+
     long countByRoom(Room room);
 
 }

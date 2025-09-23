@@ -1,9 +1,6 @@
 package com.Chanalyst.ChanalystV1.Service;
 
-import com.Chanalyst.ChanalystV1.DTO.AnswerDTO;
-import com.Chanalyst.ChanalystV1.DTO.GameState;
-import com.Chanalyst.ChanalystV1.DTO.ScoreDto;
-import com.Chanalyst.ChanalystV1.DTO.VoteResultsDto;
+import com.Chanalyst.ChanalystV1.DTO.*;
 import com.Chanalyst.ChanalystV1.Entity.Room;
 import com.Chanalyst.ChanalystV1.Repository.AnswerRepository;
 import com.Chanalyst.ChanalystV1.Repository.PlayerRepository;
@@ -47,7 +44,7 @@ public class GameStateService {
         messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);
     }
 
-    public void broadcastScoreboard(Room room, List<ScoreDto> scores) {
+    public void broadcastScoreboard(Room room, List<ScoreboardDto> scores) {
         GameState state = new GameState(0, 0, null, "scoreboard");
         state.setScores(scores);
         messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);

@@ -32,6 +32,7 @@ public class VoteService {
     private final RoomRepository roomRepository;
     private final RoomService roomService;
     private final GameStateService gameStateService;
+    private final ScoreboardService scoreboardService;
 
     public void registerVote(Long voterId, Long answerId, String roomCode) {
         Player voter = playerRepo.findById(voterId)
@@ -67,9 +68,10 @@ public class VoteService {
 
         // Award points
         Player answerOwner = answer.getPlayer();
-        answerOwner.setPoints(answerOwner.getPoints() + 10);
+        answerOwner.setPoints(answerOwner.getPoints() + 1);
         playerRepo.save(answerOwner);
 
+        scoreboardService.addPoints(answerOwner,room,round,answerOwner.getPoints() +1);
         // 🚀 NEW: after saving, check if everyone voted
         if (allVoted(roomCode, round, sequence)) {
             VoteResultsDto.VoteSummary results = results(roomCode, round, sequence);
