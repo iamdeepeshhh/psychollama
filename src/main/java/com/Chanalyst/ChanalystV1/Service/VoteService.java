@@ -71,7 +71,7 @@ public class VoteService {
         answerOwner.setPoints(answerOwner.getPoints() + 1);
         playerRepo.save(answerOwner);
 
-        scoreboardService.addPoints(answerOwner,room,round,answerOwner.getPoints() +1);
+        scoreboardService.addPoints(answerOwner,room,round,1);
         // 🚀 NEW: after saving, check if everyone voted
         if (allVoted(roomCode, round, sequence)) {
             VoteResultsDto.VoteSummary results = results(roomCode, round, sequence);

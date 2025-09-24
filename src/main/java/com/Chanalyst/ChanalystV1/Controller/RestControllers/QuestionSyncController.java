@@ -91,8 +91,6 @@ public class QuestionSyncController {
 
             messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
         } else {
-            // ✅ end of round -> go to scoreboard
-            System.out.println("scoreboard please");
             state.setPhase("scoreboard");
             state.setScores(scoreboardService.getRoundScores(roomCode,round));
             messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
