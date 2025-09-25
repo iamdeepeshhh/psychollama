@@ -159,7 +159,7 @@ public class QuestionGeneratorService {
 
                 questionRepository.save(q);
 
-                System.out.println("✅ Saved Q" + q.getSequence() + " for Round " + round + ": " + text);
+//                System.out.println("✅ Saved Q" + q.getSequence() + " for Round " + round + ": " + text);
             }
 
         } catch (Exception e) {

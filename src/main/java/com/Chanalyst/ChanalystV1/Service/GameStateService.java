@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +33,15 @@ public class GameStateService {
                 ))
                 .toList();
 
-        GameState state = new GameState(round, sequence, null, "vote");
+        String questionText = dto.isEmpty()
+                ? "Question not found"
+                : answerRepository.findByRoomAndRoundAndSequenceOrderByIdAsc(room, round, sequence)
+                .get(0)
+                .getQuestion().getText();
+
+        GameState state = new GameState(round, sequence, questionText, "vote");
         state.setAnswers(dto);
+
         tracker.save(room.getCode(), state);
         messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);
     }
@@ -49,4 +57,12 @@ public class GameStateService {
         state.setScores(scores);
         messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);
     }
+
+    public void broadcastWaitingRoom(Room room, int round, int sequence, String message) {
+        GameState state = new GameState(round, sequence, null, "waitingRoom");
+        state.setMessage(message);
+        messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);
+    }
+
+
 }

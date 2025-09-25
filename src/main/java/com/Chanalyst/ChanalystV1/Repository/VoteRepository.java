@@ -44,4 +44,16 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     boolean existsByVoterAndAnswer_RoomAndAnswer_RoundAndAnswer_Sequence(
             Player voter, Room room, int round, int sequence
     );
+
+    @Query("""
+    select distinct v.voter
+    from Vote v
+    where v.answer.room = :room
+      and v.answer.round = :round
+      and v.answer.sequence = :sequence
+     """)
+    List<Player> findDistinctVoters(@Param("room") Room room,
+                                    @Param("round") int round,
+                                    @Param("sequence") int sequence);
+
 }

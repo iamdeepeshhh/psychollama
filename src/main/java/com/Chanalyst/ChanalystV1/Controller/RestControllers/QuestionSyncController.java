@@ -27,7 +27,13 @@ public class QuestionSyncController {
     // Room states in memory for now (can later move to DB/Redis)
     private final Map<String, GameState> rooms = new ConcurrentHashMap<>();
     private final Map<String, Set<Long>> resultsAckMap = new ConcurrentHashMap<>();
-    public QuestionSyncController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, ScoreboardService scoreboardService, QuestionGeneratorService questionGeneratorService) {
+    private final Map<String, Set<String>> triggeredNext = new ConcurrentHashMap<>();
+    private final Map<String, Set<Integer>> triggeredRounds = new ConcurrentHashMap<>();
+
+    public QuestionSyncController(SimpMessagingTemplate messagingTemplate,
+                                  PlayerService playerService,
+                                  ScoreboardService scoreboardService,
+                                  QuestionGeneratorService questionGeneratorService) {
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
         this.scoreboardService = scoreboardService;
@@ -39,6 +45,14 @@ public class QuestionSyncController {
     public void startRound(@DestinationVariable String roomCode,
                            @DestinationVariable int round) {
         List<Question> questions = questionGeneratorService.getQuestionsByRoomAndRound(roomCode, round);
+        System.out.println("▶️ Starting Round " + round + " for room " + roomCode +
+                " | Questions fetched = " + questions.size());
+
+        // 🚦 Deduplication: only start once per (room, round)
+        Set<Integer> started = triggeredRounds.computeIfAbsent(roomCode, k -> ConcurrentHashMap.newKeySet());
+        if (!started.add(round)) {
+            return;
+        }
 
         if (!questions.isEmpty()) {
             Question first = questions.get(0);
@@ -46,8 +60,14 @@ public class QuestionSyncController {
             GameState state = new GameState(round, first.getSequence(), first.getText(), "question");
             rooms.put(roomCode, state);
 
+            System.out.println("✅ First Question: seq=" + first.getSequence() + " text=" + first.getText());
             messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
+        } else {
+            System.out.println("⚠️ No questions found for round " + round + " in room " + roomCode);
         }
+
+        // Reset acks for the new round
+        resultsAckMap.put(roomCode, ConcurrentHashMap.newKeySet());
     }
 
     @MessageMapping("/room/{roomCode}/round/{round}/results-ack")
@@ -56,31 +76,47 @@ public class QuestionSyncController {
                            @Payload Map<String, Object> payload) {
 
         Long playerId = ((Number) payload.get("playerId")).longValue();
-
-        resultsAckMap
-                .computeIfAbsent(roomCode, k -> ConcurrentHashMap.newKeySet())
-                .add(playerId);
+        resultsAckMap.computeIfAbsent(roomCode, k -> ConcurrentHashMap.newKeySet()).add(playerId);
 
         int totalPlayers = playerService.getPlayersByRoomCode(roomCode).size();
         int acks = resultsAckMap.get(roomCode).size();
 
-        if (acks >= totalPlayers) {
-            // ✅ All players acknowledged → move to next question
-            nextQuestion(roomCode, round);
-            resultsAckMap.get(roomCode).clear(); // reset for next sequence
+        GameState state = rooms.get(roomCode);
+
+        System.out.println("📩 Ack from player=" + playerId +
+                " | acks=" + acks + "/" + totalPlayers +
+                " | room=" + roomCode + " round=" + round +
+                " seq=" + (state != null ? state.getSequence() : "?"));
+
+        if (acks >= totalPlayers && state != null) {
+            String key = roomCode + "-" + round + "-" + state.getSequence();
+
+            Set<String> triggered = triggeredNext.computeIfAbsent(roomCode, k -> ConcurrentHashMap.newKeySet());
+            if (triggered.add(key)) {
+                System.out.println("✅ All acks received → moving to next question (key=" + key + ")");
+                nextQuestion(roomCode, round);
+                resultsAckMap.get(roomCode).clear();
+            } else {
+                System.out.println("⚠️ Duplicate ack ignored for key=" + key);
+            }
         }
     }
 
     // ⏭️ Move to the next question in the same round
-//    @MessageMapping("/room/{roomCode}/round/{round}/next")
     public void nextQuestion(@DestinationVariable String roomCode,
                              @DestinationVariable int round) {
         GameState state = rooms.get(roomCode);
-        if (state == null) return;
+        if (state == null) {
+            System.out.println("⚠️ No active game state found for room " + roomCode);
+            return;
+        }
 
         List<Question> questions = questionGeneratorService.getQuestionsByRoomAndRound(roomCode, round);
-
         int nextSeq = state.getSequence() + 1;
+
+        System.out.println("➡️ Next Question check: currentSeq=" + state.getSequence() +
+                " nextSeq=" + nextSeq + " | totalQuestions=" + questions.size());
+
         if (nextSeq <= questions.size()) {
             Question next = questions.get(nextSeq - 1);
             state.setSequence(nextSeq);
@@ -89,28 +125,33 @@ public class QuestionSyncController {
 
             rooms.put(roomCode, state);
 
+            System.out.println("📝 Sending Question seq=" + nextSeq + " | text=" + next.getText());
             messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
         } else {
+            System.out.println("📊 End of round " + round + " → showing scoreboard");
             state.setPhase("scoreboard");
-            state.setScores(scoreboardService.getRoundScores(roomCode,round));
+            state.setScores(scoreboardService.getRoundScores(roomCode, round));
             messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
 
             int nextRound = round + 1;
             int MAX_ROUNDS = 5;
 
             if (nextRound <= MAX_ROUNDS) {
-                // 🚀 Automatically trigger next round after delay
+                System.out.println("⏳ Waiting 10s then starting Round " + nextRound);
                 new Thread(() -> {
                     try {
-                        Thread.sleep(10000); // 10s delay before new round starts
+                        Thread.sleep(10000);
                         startRound(roomCode, nextRound);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException e) {
+                        System.out.println("❌ Round start interrupted: " + e.getMessage());
+                    }
                 }).start();
             } else {
-                // ✅ All rounds finished → final scoreboard
+                System.out.println("🏆 All rounds completed → Final Scoreboard");
                 state.setPhase("final-scoreboard");
                 state.setScores(scoreboardService.getCumulativeScores(roomCode));
 
+                rooms.put(roomCode, state);
                 messagingTemplate.convertAndSend("/topic/room/" + roomCode, state);
             }
         }

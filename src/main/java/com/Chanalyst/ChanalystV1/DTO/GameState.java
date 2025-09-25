@@ -22,8 +22,12 @@ public class GameState {
     private VoteResultsDto.VoteSummary results; // only set when phase = "result"
     private List<ScoreboardDto> scores;
     private boolean isLastSequence;
+    private String message;
     // only set when phase = "scoreboard"
-
+    private List<Long> votedPlayerIds;
+    private int expectedVoters;
+    private int actualVoters;
+    private String waitingMessage;
     public GameState(int round, int sequence, String questionText) {
         this.round = round;
         this.sequence = sequence;

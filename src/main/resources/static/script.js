@@ -101,6 +101,10 @@ function handleGameState(state) {
 
     case "vote":
       if (state.answers && Array.isArray(state.answers)) {
+        // show the question text on vote screen too
+        if (state.questionText) {
+          document.getElementById("voteQuestionText").innerText = state.questionText;
+        }
         loadVoting(state.answers);
       } else {
         console.warn("⚠️ No answers received in GameState", state);
