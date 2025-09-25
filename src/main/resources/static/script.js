@@ -5,8 +5,8 @@ let playerName, roomCode, playerId;
 let backendUrl = window.location.origin;
 let votingPollInFlight = false; // optional: prevents overlapping polls
 let activeQuestionKey = ""; // track which question is active to avoid stale updates
-let movedToVote = false;      // track whether we've navigated to vote for this question
-let questionTimer = null;     // countdown timer handle for question phase
+let movedToVote = false;     // track whether we've navigated to vote for this question
+let questionTimer = null;    // countdown timer handle for question phase
 let gameMode = "normal"; // default
 let stompClient = null;
 let answeredQuestions = new Set();
