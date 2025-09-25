@@ -12,26 +12,28 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Bean
-    public ThreadPoolTaskScheduler messageBrokerTaskScheduler() {
-        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(1);
-        scheduler.setThreadNamePrefix("wss-heartbeat-thread-");
-        scheduler.initialize();
-        return scheduler;
-    }
-
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Clients connect here: ws://localhost:8080/ws-game
         registry.addEndpoint("/ws-game").setAllowedOriginPatterns("*").withSockJS();
     }
 
+    @Bean
+    public ThreadPoolTaskScheduler stompTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("stomp-heartbeat-");
+        scheduler.initialize();
+        return scheduler;
+    }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic")
-                .setHeartbeatValue(new long[]{10000, 10000}) // server → clients
-                .setTaskScheduler(messageBrokerTaskScheduler());
-        registry.setApplicationDestinationPrefixes("/app"); // client → server
+                .setHeartbeatValue(new long[]{10000, 10000})
+                .setTaskScheduler(stompTaskScheduler());  // ✅ provide scheduler
+        registry.setApplicationDestinationPrefixes("/app");
     }
+
+
 }
