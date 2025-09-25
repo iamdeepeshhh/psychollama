@@ -81,6 +81,7 @@ public class VoteService {
         }
     }
 
+
     public boolean allVoted(String roomCode, int round, int sequence) {
         Room room = roomService.findByCode(roomCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found"));

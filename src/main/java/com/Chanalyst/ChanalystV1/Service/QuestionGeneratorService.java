@@ -285,6 +285,8 @@ public class QuestionGeneratorService {
 
         OUTPUT RULES:
         - Output ONLY the numbered list of questions.
+        - Do not make meaningless questions.
+        - try to create questions which can make someone think.
         - Do NOT write anything else — no introductions, no explanations, no headings.
         - Do NOT write "Here are", "Okay", "Sure", or any filler text.
         - The very first character of the response MUST be "1".
