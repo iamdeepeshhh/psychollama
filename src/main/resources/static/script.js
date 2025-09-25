@@ -73,19 +73,25 @@ function getNextLoadingMessage() {
 }
 
 function connectSocket() {
-  const socket = new SockJS(`${backendUrl}/ws-game`); // ✅ new endpoint
+  const socket = new SockJS(`${backendUrl}/ws-game`);
   stompClient = Stomp.over(socket);
+
+  stompClient.heartbeat.outgoing = 10000;
+  stompClient.heartbeat.incoming = 10000;
 
   stompClient.connect({}, (frame) => {
     console.log("✅ Connected: " + frame);
 
-    // Subscribe to game state updates for this room
     stompClient.subscribe(`/topic/room/${roomCode}`, (message) => {
       const state = JSON.parse(message.body);
       handleGameState(state);
     });
+  }, (error) => {
+    console.warn("⚠️ STOMP connection lost:", error);
+    setTimeout(connectSocket, 5000); // 🔄 retry after 5s
   });
 }
+
 
 function handleGameState(state) {
   console.log("📩 GameState received:", state);
