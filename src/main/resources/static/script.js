@@ -5,8 +5,8 @@ let playerName, roomCode, playerId;
 let backendUrl = window.location.origin;
 let votingPollInFlight = false; // optional: prevents overlapping polls
 let activeQuestionKey = ""; // track which question is active to avoid stale updates
-let movedToVote = false;     // track whether we've navigated to vote for this question
-let questionTimer = null;    // countdown timer handle for question phase
+let movedToVote = false;      // track whether we've navigated to vote for this question
+let questionTimer = null;     // countdown timer handle for question phase
 let gameMode = "normal"; // default
 let stompClient = null;
 let answeredQuestions = new Set();
@@ -73,25 +73,19 @@ function getNextLoadingMessage() {
 }
 
 function connectSocket() {
-  const socket = new SockJS(`${backendUrl}/ws-game`);
+  const socket = new SockJS(`${backendUrl}/ws-game`); // ✅ new endpoint
   stompClient = Stomp.over(socket);
-
-  stompClient.heartbeat.outgoing = 10000;
-  stompClient.heartbeat.incoming = 10000;
 
   stompClient.connect({}, (frame) => {
     console.log("✅ Connected: " + frame);
 
+    // Subscribe to game state updates for this room
     stompClient.subscribe(`/topic/room/${roomCode}`, (message) => {
       const state = JSON.parse(message.body);
       handleGameState(state);
     });
-  }, (error) => {
-    console.warn("⚠️ STOMP connection lost:", error);
-    setTimeout(connectSocket, 5000); // 🔄 retry after 5s
   });
 }
-
 
 function handleGameState(state) {
   console.log("📩 GameState received:", state);
@@ -107,10 +101,6 @@ function handleGameState(state) {
 
     case "vote":
       if (state.answers && Array.isArray(state.answers)) {
-        // show the question text on vote screen too
-        if (state.questionText) {
-          document.getElementById("voteQuestionText").innerText = state.questionText;
-        }
         loadVoting(state.answers);
       } else {
         console.warn("⚠️ No answers received in GameState", state);
