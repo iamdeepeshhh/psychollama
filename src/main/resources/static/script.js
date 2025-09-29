@@ -101,8 +101,7 @@ function handleGameState(state) {
 
     case "vote":
       if (state.answers && Array.isArray(state.answers)) {
-        // Pass alreadyVoted flag to loadVoting
-        loadVoting(state.answers, state.alreadyVoted);
+        loadVoting(state.answers);
       } else {
         console.warn("⚠️ No answers received in GameState", state);
       }
@@ -438,32 +437,43 @@ function startAllAnsweredPolling() {
 }
 
 // Voting phase
-function loadVoting(answers, alreadyVoted) {
-  if (alreadyVoted) {
-    // Show a message or just move to waiting/results screen
-    document.getElementById("funniestAnswer").innerText =
-      "You already voted! Waiting for others...";
-    showScreen("resultScreen");
-    return;
-  }
+async function loadVoting(answers) {
   if (!Array.isArray(answers)) {
     console.error("❌ No answers array in state", answers);
     return;
   }
+
   const list = document.getElementById("answersList");
   list.innerHTML = "";
-  answers.forEach(a => {
-    const btn = document.createElement("button");
-    btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
-    if (a.playerId === playerId && gameMode !== "dating") {
-      btn.disabled = true;
-      btn.title = "You can't vote for yourself";
-    } else {
-      btn.onclick = () => vote(a.id);
-    }
-    list.appendChild(btn);
-  });
-  showScreen("voteScreen");
+
+  // 🔑 extra step: check if current player already voted
+  try {
+    const resp = await safeFetch(
+      `${backendUrl}/vote/already-voted?playerId=${playerId}&roomCode=${roomCode}&round=${currentRound}&sequence=${currentSequence}`
+    );
+    const alreadyVoted = await resp.json();
+
+    answers.forEach(a => {
+      const btn = document.createElement("button");
+      btn.innerText = a.text + (a.playerId === playerId ? " (you)" : "");
+
+      if (alreadyVoted) {
+        btn.disabled = true;
+        btn.title = "You already voted!";
+      } else if (a.playerId === playerId && gameMode !== "dating") {
+        btn.disabled = true;
+        btn.title = "You can't vote for yourself";
+      } else {
+        btn.onclick = () => vote(a.id);
+      }
+
+      list.appendChild(btn);
+    });
+
+    showScreen("voteScreen");
+  } catch (err) {
+    console.error("⚠️ Failed to check already-voted", err);
+  }
 }
 
 // Vote
