@@ -101,7 +101,8 @@ function handleGameState(state) {
 
     case "vote":
       if (state.answers && Array.isArray(state.answers)) {
-        loadVoting(state.answers);
+        // Pass alreadyVoted flag to loadVoting
+        loadVoting(state.answers, state.alreadyVoted);
       } else {
         console.warn("⚠️ No answers received in GameState", state);
       }
@@ -437,7 +438,14 @@ function startAllAnsweredPolling() {
 }
 
 // Voting phase
-function loadVoting(answers) {
+function loadVoting(answers, alreadyVoted) {
+  if (alreadyVoted) {
+    // Show a message or just move to waiting/results screen
+    document.getElementById("funniestAnswer").innerText =
+      "You already voted! Waiting for others...";
+    showScreen("resultScreen");
+    return;
+  }
   if (!Array.isArray(answers)) {
     console.error("❌ No answers array in state", answers);
     return;
