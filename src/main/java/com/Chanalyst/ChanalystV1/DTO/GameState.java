@@ -28,6 +28,7 @@ public class GameState {
     private int expectedVoters;
     private int actualVoters;
     private String waitingMessage;
+    private boolean alreadyVoted;
     public GameState(int round, int sequence, String questionText) {
         this.round = round;
         this.sequence = sequence;
