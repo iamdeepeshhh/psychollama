@@ -102,6 +102,7 @@ function handleGameState(state) {
     case "vote":
       if (state.answers && Array.isArray(state.answers)) {
         loadVoting(state.answers);
+        document.getElementById("voteQuestionText").innerText = state.questionText || "Question";
       } else {
         console.warn("⚠️ No answers received in GameState", state);
       }
