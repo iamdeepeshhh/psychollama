@@ -42,6 +42,11 @@ public class GameStateService {
         GameState state = new GameState(round, sequence, questionText, "vote");
         state.setAnswers(dto);
 
+        boolean alreadyVoted = voteRepo.existsByVoterAndAnswer_RoomAndAnswer_RoundAndAnswer_Sequence(
+            currentPlayer, room, round, sequence
+        );
+        state.setAlreadyVoted(alreadyVoted);
+        
         tracker.save(room.getCode(), state);
         messagingTemplate.convertAndSend("/topic/room/" + room.getCode(), state);
     }
